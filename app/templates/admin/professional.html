@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}CYBERTRIP — Admin{% endblock %}{% block content %}
+<div class="admin-wrap"><aside class="admin-side">{% include "admin/_nav.html" %}</aside>
+<section class="admin-content"><div class="section-head"><div><span class="eyebrow">MODULE / {{section|upper}}</span><h1>{{title}}</h1><p>{{desc}}</p></div></div><div class="admin-grid professional">{% for name,value,url,small in cards %}<a class="admin-stat pro-stat" href="{{url}}"><span>{{name}}</span><b>{{value}}</b><small>{{small}}</small><em>→</em></a>{% endfor %}</div><div class="admin-banner"><div><span class="eyebrow">UNIVERSAL WORKSPACE</span><h3>Modul tayyor</h3><p>Bu bo‘lim CyberTrip boshqaruv tizimining bir qismi sifatida tashkil qilingan. Keyingi feature'lar shu markazga ulanadi.</p></div><div class="health-chip"><i></i> Online</div></div></section></div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}{% block title %}{{challenge.title}} — CYBERTRIP LAB{% endblock %}{% block content %}
+<div class="lab-shell pro-lab">
+  <div class="lab-header">
+    <div><span class="eyebrow">ISOLATED TRAINING LAB</span><h1>{{challenge.title}}</h1><div class="lab-tags"><span class="pill">{{challenge.category}}</span><span>{{challenge.difficulty}}</span><b>{{challenge.points}} XP</b></div></div>
+    <div class="lab-live"><i></i> LAB ONLINE</div>
+  </div>
+
+  <div class="lab-grid">
+    <article class="lab-panel lab-workspace">
+      <div class="lab-panel-top"><span>CYBERTRIP / SANDBOX / {{challenge.simulated_service}}</span><span>NETWORK: ISOLATED</span></div>
+      <div class="lab-tabs"><span class="active">Lab</span><span>Topshiriq</span><span>Loglar</span><span>Yordam</span></div>
+      <div class="sim-browser">
+        <div class="browser-bar"><span></span><span></span><span></span><b>{{challenge.simulated_service}}</b><em>https://lab.cybertrip.local/{{challenge.slug}}</em></div>
+        <div class="sim-body">
+          <div class="terminal-line">$ cybertrip --lab-status</div>
+          <div class="terminal-line ok">✓ sandbox ready</div>
+          <div class="terminal-line">$ inspect --target training-node</div>
+          <div class="terminal-line">node: ct-lab-{{challenge.id}} | access: educational</div>
+          <div class="terminal-line">objective: {{challenge.objective}}</div>
+          <div class="lab-console-cards"><div><span>HOST</span><b>lab-node-{{challenge.id}}</b></div><div><span>MODE</span><b>SIMULATION</b></div><div><span>RESET</span><b>AUTO</b></div></div>
+          <div class="terminal-line">$ _</div>
+        </div>
+      </div>
+      <div class="lab-information"><div><span class="eyebrow">MAQSAD</span><p>{{challenge.objective}}</p></div><div><span class="eyebrow">TOPSHIRIQ</span><p>Training node ichidan kerakli dalilni toping va flagni aniqlang.</p></div></div>
+    </article>
+
+    <aside class="lab-panel lab-submit">
+      <span class="eyebrow">CONTROL PANEL</span><h3>Topshiriqni yakunlang</h3>
+      <div class="lab-score"><span>Mukofot</span><b>+{{challenge.points}} XP</b></div>
+      {% if session.get('user_id') %}
+      {% if lab %}<a class="btn primary full" href="{{url_for('ctf.lab_page',slug=challenge.slug)}}">Virtual Labni ochish →</a>{% endif %}<form method="post" action="{{url_for('ctf.submit',slug=challenge.slug)}}" class="flag-form">
+        <label>Topilgan flag</label><input name="flag" placeholder="flag{...}" required autocomplete="off"><button class="btn primary full">Flagni yuborish</button>
+      </form>
+      <div class="hint-purchase">
+        <div><b>Hint kerakmi?</b><p>Qo‘shimcha ishora ochish: <strong>-50 XP</strong></p></div>
+        {% if session.get('hint_' ~ challenge.id) %}
+          <div class="hint-unlocked"><span>✓ HINT OCHILGAN</span><p>{{challenge.hint}}</p></div>
+        {% else %}
+          <form method="post" action="{{url_for('ctf.buy_hint',slug=challenge.slug)}}"><button class="btn ghost full">Hintni ochish · -50 XP</button></form>
+        {% endif %}
+      </div>
+      {% else %}<a class="btn primary full" href="{{url_for('auth.login')}}">Kirish va boshlash</a>{% endif %}
+      {% if solved %}<div class="solved-box">✓ Bajarildi · +{{challenge.points}} XP</div>{% endif %}
+      <div class="lab-note"><b>Lab qayerdan olinadi?</b><p>Har bir challenge uchun CyberTrip ichida o‘ziga tegishli simulyatsiya node yaratiladi. Real internet host ishlatilmaydi.</p></div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

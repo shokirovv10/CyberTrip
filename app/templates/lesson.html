@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{lesson.title}} — CYBERTRIP{% endblock %}
+{% block content %}
+<div class="learning-page">
+  <aside class="learning-sidebar">
+    <a href="{{url_for('learning.course',slug=lesson.course.slug)}}" class="sidebar-back">← {{lesson.course.title}}</a>
+    <div class="sidebar-label">COURSE MAP</div>
+    {% for item in lesson.course.lessons %}<a href="{{url_for('learning.lesson',lesson_id=item.id)}}" class="lesson-link {{'active' if item.id==lesson.id else ''}}"><span>{{'%02d'|format(loop.index)}}</span><div><b>{{item.title}}</b><small>+{{item.xp_reward}} XP</small></div>{% if item.id==lesson.id %}<i>●</i>{% endif %}</a>{% endfor %}
+    <div class="sidebar-divider"></div>
+    <a href="{{url_for('learning.quiz',lesson_id=lesson.id)}}" class="sidebar-cta">Quizni boshlash →</a>
+    {% if lesson.lab_slug %}<a href="{{url_for('labs.view',slug=lesson.lab_slug)}}" class="sidebar-cta secondary">Virtual Lab →</a>{% endif %}
+  </aside>
+  <article class="lesson-document">
+    <div class="lesson-head">
+      <div class="breadcrumb"><a href="{{url_for('learning.courses')}}">O‘rganish</a><span>/</span>{{lesson.course.category}}<span>/</span>{{lesson.title}}</div>
+      <div class="eyebrow">LESSON {{'%02d'|format(lesson.position)}} / {{lesson.course.category|upper}}</div>
+      <h1>{{lesson.title}}</h1>
+      <p class="lesson-lead">Mavzuni faqat o‘qib qolmang: avval tushuning, keyin aniqlang, sandboxda bajaring va qanday yopilishini isbotlang.</p>
+      <div class="lesson-meta"><span>10–25 min</span><span>+{{lesson.xp_reward}} XP</span><span>Quiz + Lab</span><span>Beginner → Practical</span></div>
+    </div>
+    <div class="lesson-nav-strip"><a class="active">01 / THEORY</a><a>02 / DETECT</a><a>03 / PRACTICE</a><a>04 / FIX</a><a>05 / QUIZ</a></div>
+    <section class="lesson-content-card">
+      <div class="content-intro"><span class="section-kicker">CORE CURRICULUM</span><h2>Amaliy o‘quv konspekti</h2><p>Har bir bo‘limda tushuncha, komandalar, aniqlash usuli, himoyalash va labga tayyorlov bosqichlari bor.</p></div>
+      <div class="rich-markdown">{{ lesson.content|lesson_html|safe }}</div>
+    </section>
+    <section class="lesson-quick-quiz">
+      <div class="quick-quiz-head">
+        <div><span class="section-kicker">QUICK CHECK</span><h2>2–3 daqiqalik mustahkamlash quiz</h2><p>Har bir dars bo‘yicha eng muhim tushunchalarni eslab qolganingizni tekshiring.</p></div>
+        <span class="quick-quiz-badge">{{ quick_quiz|length }} SAVOL · 70%+</span>
+      </div>
+      {% if quick_quiz %}
+      <form method="post" action="{{url_for('learning.quick_quiz', lesson_id=lesson.id)}}" class="quick-quiz-form">
+        {% for q in quick_quiz %}
+        <div class="quick-question">
+          <div class="quick-question-title"><span>{{loop.index}}.</span><b>{{q.question}}</b></div>
+          <div class="quick-options">
+            {% for key,text in [('A',q.option_a),('B',q.option_b),('C',q.option_c),('D',q.option_d)] %}
+            <label class="quick-option"><input type="radio" name="qq{{q.id}}" value="{{key}}" required><span class="quick-letter">{{key}}</span><span>{{text}}</span></label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+        <div class="quick-quiz-actions"><button class="btn btn-primary" type="submit">Javoblarni tekshirish →</button>{% if quick_score is not none %}<div class="quick-result {{'passed' if quick_score>=70 else 'retry'}}"><strong>{{quick_score}}%</strong><span>{{'Mustahkamlandi ✓' if quick_score>=70 else 'Yana bir bor ko‘rib chiqing'}}</span></div>{% endif %}</div>
+      </form>
+      {% else %}<div class="quick-empty">Bu dars uchun mustahkamlash savollari hali qo‘shilmagan.</div>{% endif %}
+    </section>
+    <section class="practice-strip"><div><span class="section-kicker">PRACTICE LOOP</span><h2>Bilimni amaliyotga aylantiring</h2><p>O‘qishdan keyin Virtual Lab'da evidence yig‘ing. Keyin quiz orqali bilimni tekshiring.</p></div><div class="practice-actions"><a class="btn btn-primary" href="{{url_for('labs.view',slug=lesson.lab_slug)}}" {% if not lesson.lab_slug %}aria-disabled="true"{% endif %}>Virtual Lab →</a><a class="btn btn-ghost" href="{{url_for('learning.quiz',lesson_id=lesson.id)}}">To‘liq Quiz →</a></div></section>
+    <section class="completion-card"><div><span class="section-kicker">COMPLETION</span><h2>Bu darsni yakunlang</h2><p>O‘qib, amaliyot qilib bo‘lgach, progressga +{{lesson.xp_reward}} XP qo‘shing.</p></div><form method="post" action="{{url_for('learning.complete',lesson_id=lesson.id)}}"><button class="btn btn-primary btn-lg">Darsni tugatish · +{{lesson.xp_reward}} XP</button></form></section>
+  </article>
+</div>
+{% endblock %}

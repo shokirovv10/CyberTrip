@@ -1,0 +1,8 @@
+{% extends "base.html" %}{% block title %}CYBERTRIP — Admin{% endblock %}{% block content %}
+<div class="admin-wrap"><aside class="admin-side">{% include "admin/_nav.html" %}</aside>
+<section class="admin-content"><div class="section-head"><div><span class="eyebrow">CONTROL CENTER</span><h1>CyberTrip Admin</h1><p>Platformani bitta professional markazdan boshqaring.</p></div></div>
+<div class="admin-grid">{% for k,v in counts.items() %}<div class="admin-stat"><span>{{k}}</span><b>{{v}}</b><small>Joriy holat</small></div>{% endfor %}</div>
+<div class="admin-banner"><div><span class="eyebrow">PLATFORM HEALTH</span><h3>CyberTrip barcha xizmatlari online.</h3><p>User, kontent, CTF, XP, moderation, security va analytics birlashtirilgan.</p></div><div class="health-chip"><i></i> ONLINE</div></div>
+<div class="admin-two"><div class="panel-box"><h3>So‘nggi foydalanuvchilar</h3>{% for u in recent_users %}<a class="mini-user" href="{{url_for('admin.user_detail',user_id=u.id)}}"><span class="user-avatar">{{u.username[0]|upper}}</span><div><b>{{u.username}}</b><small>{{u.xp}} XP · Level {{level_for_xp(u.xp)}} · {{u.role}}</small></div></a>{% endfor %}</div>
+<div class="panel-box"><h3>Tezkor boshqaruv</h3><div class="quick-grid"><a href="{{url_for('admin.users')}}">Foydalanuvchilar</a><a href="{{url_for('admin.content')}}">Kontent</a><a href="{{url_for('admin.challenges')}}">CTF</a><a href="{{url_for('admin.analytics')}}">Analitika</a><a href="{{url_for('admin.security')}}">Security</a><a href="{{url_for('admin.audit')}}">Audit log</a><a href="{{url_for('admin.events')}}">Eventlar</a><a href="{{url_for('admin.settings')}}">Sozlamalar</a></div></div></div>
+</section></div>{% endblock %}

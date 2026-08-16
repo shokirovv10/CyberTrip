@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}CYBERTRIP — Texnik ishlar{% endblock %}
+{% block content %}
+<style>
+.maintenance-page{min-height:calc(100vh - 170px);display:grid;place-items:center;padding:64px 16px;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 18%,rgba(37,220,255,.08),transparent 35%);}
+.maintenance-page:before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(84,220,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(84,220,255,.035) 1px,transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to bottom,black,transparent 82%);pointer-events:none}
+.maintenance-shell{position:relative;width:min(880px,100%);padding:clamp(28px,5vw,56px);border:1px solid rgba(84,220,255,.16);border-radius:28px;background:linear-gradient(145deg,rgba(9,23,36,.98),rgba(4,10,18,.99));box-shadow:0 40px 120px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.03);overflow:hidden}
+.maintenance-shell:after{content:"SYSTEM MAINTENANCE";position:absolute;right:28px;top:22px;color:rgba(84,220,255,.18);font:700 10px/1 "IBM Plex Mono",monospace;letter-spacing:.18em}
+.maintenance-terminal{display:flex;gap:10px;align-items:center;padding:12px 14px;border:1px solid rgba(84,220,255,.12);border-radius:12px;background:#020b12;color:#7894a7;font:600 12px/1.3 "IBM Plex Mono",monospace}
+.maintenance-terminal .prompt{color:#54dcff}.maintenance-terminal .cursor{display:inline-block;width:7px;height:13px;background:#54dcff;animation:blink 1s steps(2,end) infinite}
+.maintenance-badge{display:inline-flex;align-items:center;gap:9px;margin-top:28px;padding:8px 12px;border:1px solid rgba(255,193,108,.22);border-radius:999px;background:rgba(255,193,108,.06);color:#ffca79;font:700 10px/1 "IBM Plex Mono",monospace;letter-spacing:.08em}
+.maintenance-badge i{width:7px;height:7px;border-radius:50%;background:#ffbe68;box-shadow:0 0 16px rgba(255,190,104,.75)}
+.maintenance-shell h1{max-width:760px;margin:18px 0 14px;color:#f5fbff;font:700 clamp(38px,6vw,70px)/.98 "Space Grotesk",sans-serif;letter-spacing:-.055em}
+.maintenance-shell>p{max-width:710px;margin:0;color:#8ba1b1;font:400 clamp(15px,2vw,17px)/1.8 "Manrope",sans-serif}
+.maintenance-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:30px}
+.maintenance-meta .meta{padding:16px;border:1px solid rgba(143,176,199,.1);border-radius:14px;background:rgba(255,255,255,.018)}
+.maintenance-meta small{display:block;color:#5e7687;font:700 9px/1.2 "IBM Plex Mono",monospace;letter-spacing:.12em;text-transform:uppercase}.maintenance-meta strong{display:block;margin-top:7px;color:#dbeaf2;font:700 14px/1.4 "Manrope",sans-serif}
+.maintenance-foot{margin-top:26px;color:#5e7788;font:500 11px/1.7 "IBM Plex Mono",monospace}
+@keyframes blink{50%{opacity:0}}
+@media(max-width:700px){.maintenance-meta{grid-template-columns:1fr}.maintenance-shell:after{display:none}.maintenance-shell h1{font-size:42px}}
+</style>
+<section class="maintenance-page">
+  <div class="maintenance-shell">
+    <div class="maintenance-terminal"><span class="prompt">cybertrip@uz:~$</span><span>system status</span><span class="cursor"></span></div>
+    <div class="maintenance-badge"><i></i> PLATFORM / 503 · TEMPORARILY OFFLINE</div>
+    <h1>Texnik ishlar olib borilmoqda.</h1>
+    <p>CYBERTRIP hozirda platforma barqarorligi, xavfsizlik va yangi imkoniyatlarni yangilash uchun texnik xizmatda. Ishlar yakunlangach xizmat avtomatik qayta ochiladi.</p>
+    <div class="maintenance-meta">
+      <div class="meta"><small>Web Platform</small><strong>Maintenance mode</strong></div>
+      <div class="meta"><small>Training Labs</small><strong>Temporarily paused</strong></div>
+      <div class="meta"><small>Security</small><strong>Updates in progress</strong></div>
+    </div>
+    <div class="maintenance-foot">STATUS: MAINTENANCE · PLEASE RETURN LATER · CYBERTRIP ACADEMY</div>
+  </div>
+</section>
+{% endblock %}

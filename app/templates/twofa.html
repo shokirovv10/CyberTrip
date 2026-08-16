@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block title %}2FA — CYBERTRIP{% endblock %}{% block content %}
+<section class="auth-screen auth-single"><div class="auth-panel wide twofa-panel">
+<div class="auth-kicker">ACCOUNT SECURITY / 2FA</div><h1>Hisobni himoyalang</h1>
+<p class="auth-lead">Authenticator ilovasini oching, QR kodni skaner qiling yoki secretni qo‘lda kiriting. Keyin ilova yaratgan 6 xonali kodni shu yerga yozing.</p>
+<div class="twofa-grid"><div class="twofa-qr"><div class="qr-frame"><img src="{{url_for('auth.twofa_qr')}}" alt="CYBERTRIP 2FA QR code"></div><small>Google Authenticator, Microsoft Authenticator yoki mos TOTP ilovasidan foydalaning.</small></div>
+<div class="twofa-help"><div class="secret-box"><span>MANUAL SECRET</span><code>{{secret}}</code><button type="button" class="btn btn-ghost btn-sm" data-copy-secret="{{secret}}">Nusxalash</button></div>
+<ol class="twofa-steps"><li>Authenticator ilovasida <b>+</b> ni bosing.</li><li><b>Scan QR code</b>ni tanlang yoki secretni qo‘lda kiriting.</li><li>CYBERTRIP uchun paydo bo‘lgan <b>6 xonali vaqtinchalik kod</b>ni kiriting.</li><li>Kod odatda har 30 soniyada yangilanadi.</li></ol></div></div>
+<form method="post" class="auth-form"><label>6 xonali Authenticator kodi<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required></label><button class="btn btn-primary btn-lg full">2FA'ni tasdiqlash →</button></form>
+</div></section>{% endblock %}

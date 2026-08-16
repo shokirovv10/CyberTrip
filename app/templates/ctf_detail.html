@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{challenge.title}} — CYBERTRIP CTF{% endblock %}
+{% block content %}
+<section class="detail-hero compact">
+  <div>
+    <div class="breadcrumb"><a href="{{url_for('ctf.index')}}">CTF Arena</a><span>/</span>{{challenge.category}}</div>
+    <div class="eyebrow">CHALLENGE / {{challenge.difficulty|upper}}</div>
+    <h1>{{challenge.title}}</h1>
+    <p>{{challenge.description}}</p>
+    <div class="detail-badges"><span class="status-pill">{{challenge.category}}</span><span class="status-pill">{{challenge.points}} XP</span><span class="status-pill">{{challenge.solves}} solves</span><span class="status-pill">SAFE TRAINING NODE</span></div>
+    <div class="hero-actions"><a class="btn btn-primary btn-lg" target="_blank" rel="noopener" href="{{url_for('ctf.lab_page',slug=challenge.slug,new=1)}}">Virtual Labni ochish ↗</a><a class="btn btn-ghost btn-lg" href="{{url_for('ctf.index')}}">← CTF ga qaytish</a></div>
+  </div>
+  <div class="intel-card">
+    <div class="intel-head"><span>CHALLENGE INTEL</span><span>CT-{{'%04d'|format(challenge.id)}}</span></div>
+    <div class="intel-line"><span>OBJECTIVE</span><b>{{challenge.objective}}</b></div>
+    <div class="intel-line"><span>SERVICE</span><b>{{challenge.simulated_service}}</b></div>
+    <div class="intel-line"><span>POINTS</span><b>{{challenge.points}} XP</b></div>
+    {% if solved %}<div class="success-panel">✓ Siz bu challenge'ni avval yechgansiz.</div>{% endif %}
+  </div>
+</section>
+<section class="split-section">
+  <div class="content-stack">
+    <article class="content-panel"><div class="section-kicker">01 / MISSION</div><h2>Vazifa</h2><p>{{challenge.description}}</p><div class="mission-box"><span>GOAL</span><p>{{challenge.objective}}</p></div></article>
+    <article class="content-panel"><div class="section-kicker">02 / WORKFLOW</div><h2>Qanday ishlaysiz?</h2><div class="workflow-grid"><div><span>01</span><b>Labni boshlang</b><small>Challenge uchun izolyatsiyalangan yangi session ochiladi.</small></div><div><span>02</span><b>Evidence yig‘ing</b><small>Inspect, analyze va verify bosqichlarini bajaring.</small></div><div><span>03</span><b>Labni yakunlang</b><small>Flag faqat barcha talablar bajarilgandan keyin ochiladi.</small></div><div><span>04</span><b>Submit qiling</b><small>Topilgan flagni challenge submission oynasiga yuboring.</small></div></div></article>
+    <article class="content-panel"><div class="section-kicker">03 / ETHICS</div><h2>Faqat ruxsat etilgan muhit</h2><p>Ushbu challenge faqat CYBERTRIP tomonidan taqdim etilgan training target uchun. O‘rganilgan texnikalarni real tizimlarda ruxsatsiz qo‘llash platforma qoidalariga zid.</p></article>
+  </div>
+  <aside class="sticky-rail"><div class="rail-card"><span class="eyebrow">YOUR NEXT MOVE</span><h3>Virtual Lab</h3><p>Yangi betda oching va amaliy topshiriqlarni bajaring.</p><a target="_blank" rel="noopener" href="{{url_for('ctf.lab_page',slug=challenge.slug,new=1)}}" class="btn btn-primary full">Labni boshlash ↗</a></div>{% if challenge.hint %}<div class="rail-card muted-rail"><span class="eyebrow">HINT</span><p>Hint lab oqimining ichida ochiladi. Avval kuzating, keyin taxmin qiling.</p></div>{% endif %}</aside>
+</section>
+{% endblock %}

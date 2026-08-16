@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07111d">
+<meta name="description" content="CYBERTRIP — amaliy kiberxavfsizlik ta'limi, xavfsiz virtual laboratoriyalar va CTF platformasi.">
+<title>{% block title %}CYBERTRIP{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static',filename='css/style.css') }}">
+<script defer src="{{ url_for('static',filename='js/app.js') }}"></script>
+</head>
+<body class="page-shell">
+<div class="ambient ambient-a"></div><div class="ambient ambient-b"></div><div class="scanline"></div>
+<div class="motivation-wrap"><div class="motivation-bar"><span class="motivation-label">DAILY SIGNAL</span><span class="motivation-dot"></span><b>{{ daily_motivation }}</b><span class="motivation-meta">CYBERTRIP / 2026</span></div></div>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="{{ url_for('main.home') }}" class="brand" aria-label="CYBERTRIP home">
+      <span class="brandmark"><span></span></span>
+      <span class="brand-copy"><b>CYBERTRIP</b><small>LEARN · LAB · CTF</small></span>
+    </a>
+    <button class="mobile-nav-toggle" type="button" aria-label="Menyuni ochish" aria-expanded="false" aria-controls="main-nav"><span></span><span></span><span></span></button>
+    <nav class="mainnav" id="main-nav">
+      <a href="{{ url_for('main.home') }}" class="{{ 'active' if request.path=='/' else '' }}">{{_("home")}}</a>
+      <a href="{{ url_for('learning.courses') }}" class="{{ 'active' if request.path.startswith('/learn') and not request.path.startswith('/learn/resources') else '' }}">{{_("learn")}}</a>
+      <a href="{{ url_for('learning.resources') }}" class="{{ 'active' if request.path.startswith('/learn/resources') else '' }}">{{_("resources")}}</a>
+      <a href="{{ url_for('ctf.index') }}" class="{{ 'active' if request.path.startswith('/ctf') and not request.path.startswith('/ctf/leaderboard') else '' }}">{{_("ctf")}}</a>
+      <a href="{{ url_for('ctf.leaderboard') }}" class="{{ 'active' if request.path.startswith('/ctf/leaderboard') else '' }}">{{_("leaderboard")}}</a>
+      <a href="{{ url_for('platform.tutor') }}" class="{{ 'active' if request.path.startswith('/tutor') else '' }}">AI Tutor</a>
+      <a href="{{ url_for('platform.skills') }}" class="{{ 'active' if request.path.startswith('/skills') else '' }}">Skills</a>
+      <a href="{{ url_for('platform.team') }}" class="{{ 'active' if request.path.startswith('/team') else '' }}">{{_("team")}}</a>
+      <a href="{{ url_for('chat.index') }}" class="{{ 'active' if request.path.startswith('/chat') else '' }}">{{_("community")}}</a>
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('main.dashboard') }}" class="{{ 'active' if request.path.startswith('/dashboard') else '' }}">{{_("dashboard")}}</a>
+        {% if current_user and current_user.role in ['admin','super_admin'] %}<a href="{{ url_for('admin.index') }}" class="admin-link {{ 'active' if request.path.startswith('/admin') else '' }}">{{_("admin")}}</a>{% endif %}
+      {% endif %}
+    </nav>
+    <div class="top-actions">
+      <div class="lang-switch" aria-label="Language">
+        <a href="{{ url_for('main.set_lang',code='uz') }}" class="{{'active' if lang=='uz' else ''}}">UZ</a>
+        <a href="{{ url_for('main.set_lang',code='ru') }}" class="{{'active' if lang=='ru' else ''}}">RU</a>
+        <a href="{{ url_for('main.set_lang',code='en') }}" class="{{'active' if lang=='en' else ''}}">EN</a>
+      </div>
+      {% if session.get('user_id') %}
+        <div class="profile-menu">
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('profile.index') }}">{{_("profile")}}</a>
+          <a class="profile-logout" href="{{ url_for('auth.logout') }}">{{_("logout")}}</a>
+        </div>
+      {% else %}
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('auth.login') }}">{{_("login")}}</a>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('auth.register') }}">{{_("register")}}</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+<div class="page-progress" aria-hidden="true"><span></span></div>
+<main class="main-shell">
+{% with messages=get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-stack">{% for cat,msg in messages %}<div class="flash flash-{{cat}}"><span class="flash-icon">{{ '✓' if cat=='success' else '!' }}</span><span>{{msg}}</span></div>{% endfor %}</div>{% endif %}{% endwith %}
+{% block content %}{% endblock %}
+</main>
+<footer class="site-footer">
+  <div class="footer-top">
+    <div class="footer-brand"><div class="brandmark small"><span></span></div><div><b>CYBERTRIP</b><small>AMALIY KIBERXAVFSIZLIK TA’LIMI</small></div></div>
+    <div class="footer-copy">O‘rganing. Laboratoriyada bajaring. CTF’da isbotlang. Himoyalashni o‘rganing.</div>
+    <div class="footer-status"><span></span> TRAINING NETWORK ONLINE</div>
+  </div>
+  <div class="footer-links">
+    <div><strong>PLATFORM</strong><a href="{{url_for('learning.courses')}}">Kurslar</a><a href="{{url_for('ctf.index')}}">CTF Arena</a><a href="{{url_for('platform.skills')}}">Cyber Skill Map</a><a href="{{url_for('platform.tutor')}}">AI Tutor</a></div>
+    <div><strong>RESOURCES</strong><a href="{{url_for('learning.resources')}}">Knowledge Library</a><a href="{{url_for('platform.team')}}">Jamoalar</a><a href="{{url_for('ctf.leaderboard')}}">{{_("leaderboard")}}</a></div>
+    <div><strong>TRUST & SAFETY</strong><a href="{{url_for('platform.rules')}}">Qoidalar</a><a href="{{url_for('platform.terms')}}">Shartlar</a><a href="{{url_for('platform.privacy')}}">Maxfiylik</a><a href="{{url_for('platform.lab_safety')}}">Lab xavfsizligi</a></div>
+    <div><strong>ABOUT</strong><a href="{{url_for('platform.about')}}">Biz haqimizda</a><a href="{{url_for('platform.community_guidelines')}}">{{_("community")}}</a><a href="{{url_for('platform.cookie_policy')}}">Cookie</a></div>
+  </div>
+  <div class="footer-bottom"><span>© 2026 CYBERTRIP</span><span>Egasi: Shakirov Shokirjon</span><span>Education · Ethics · Practice</span></div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}AI Tutor — CYBERTRIP{% endblock %}
+{% block content %}
+<section class="page-hero tutor-hero">
+  <div>
+    <div class="section-kicker">AI CYBER MENTOR</div>
+    <h1>Javob emas. Fikrlash jarayoni.</h1>
+    <p>Learn → Detect → Practice → Fix → Review. Tutor savolni o‘quv rejimiga aylantiradi va amaliy keyingi qadamni beradi.</p>
+  </div>
+  <div class="hero-mini-stat"><b>05</b><span>learning modes</span></div>
+</section>
+<section class="tutor-shell-v2">
+  <div class="tutor-main">
+    <div class="tutor-modebar">
+      {% for m,n in [('learn','Learn'),('detect','Detect'),('practice','Practice'),('fix','Fix'),('review','Review')] %}
+      <button form="tutor-form" name="mode" value="{{m}}" class="{{'active' if mode==m else ''}}"><span>{{'%02d'|format(loop.index)}}</span><b>{{n}}</b></button>
+      {% endfor %}
+    </div>
+    <form id="tutor-form" method="post" class="tutor-input">
+      <label>Mavzu yoki savol
+        <textarea name="topic" rows="5" placeholder="Masalan: SQL Injectionni qanday aniqlash, dalilni qanday yig‘ish va qanday yopish mumkin?" required>{{ topic }}</textarea>
+      </label>
+      <div class="tutor-actions">
+        <button class="btn btn-primary btn-lg" type="submit">Tutor'ni ishga tushirish <span>↗</span></button>
+        <span class="ai-status {{'ai-live' if provider=='openai' else 'ai-local'}}">
+          <i></i>{% if provider=='openai' %}AI LIVE{% else %}LOCAL TRAINING MODE{% endif %}
+        </span>
+      </div>
+    </form>
+    {% if answer %}
+    <article class="tutor-response">
+      <div class="response-head"><span class="section-kicker">AI TUTOR / {{mode|upper}}</span><span>{{'OPENAI' if provider=='openai' else 'OFFLINE ENGINE'}} · TRAINING-ONLY</span></div>
+      <div class="response-body">{{answer}}</div>
+      <div class="response-footer"><a href="{{url_for('learning.courses')}}" class="btn btn-ghost">Darsga o‘tish</a><a href="{{url_for('ctf.index')}}" class="btn btn-primary">Lab/CTF →</a></div>
+    </article>
+    {% else %}
+    <article class="tutor-empty">
+      <span>ASK → THINK → PRACTICE</span>
+      <h3>Bir mavzuni tanlang va mentor bilan boshlang.</h3>
+      <div class="starter-grid">
+        <button form="tutor-form" name="topic" value="Linux permissionlarini qanday tekshiraman va qanday himoyalayman?" class="starter">Linux permission</button>
+        <button form="tutor-form" name="topic" value="HTTP response va security headerlarni qanday tahlil qilaman?" class="starter">HTTP Security</button>
+        <button form="tutor-form" name="topic" value="Logdan incident signalini qanday aniqlayman?" class="starter">Blue Team</button>
+      </div>
+    </article>
+    {% endif %}
+  </div>
+  <aside class="tutor-rail">
+    <div class="rail-card"><span class="section-kicker">MENTOR FLOW</span>
+      <div class="mentor-step"><b>01</b><span>Learn</span><small>Konsept</small></div>
+      <div class="mentor-step"><b>02</b><span>Detect</span><small>Evidence</small></div>
+      <div class="mentor-step"><b>03</b><span>Practice</span><small>Lab</small></div>
+      <div class="mentor-step"><b>04</b><span>Fix</span><small>Remediation</small></div>
+      <div class="mentor-step"><b>05</b><span>Review</span><small>Mastery</small></div>
+    </div>
+    <div class="rail-card muted-rail"><span class="section-kicker">ETHICS</span><p>AI Tutor faqat ruxsat berilgan training muhitlari, himoya va ta’lim uchun yo‘naltiradi.</p></div>
+  </aside>
+</section>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}CYBERTRIP — {{ "Kirish" if mode=="login" else "Ro‘yxatdan o‘tish" }}{% endblock %}
+{% block content %}
+<section class="auth-screen">
+  <div class="auth-visual"><div class="visual-tag">CYBERTRIP / SECURE ACCESS</div><div class="auth-terminal"><div class="term-head"><span>cybertrip@uz:~</span><span>bash</span></div><div class="term-body"><p><span class="prompt">$</span> init identity --secure</p><p class="ok">✓ training environment ready</p><p><span class="prompt">$</span> load learning profile</p><div class="term-line"></div><div class="term-grid"><span>LABS</span><b>ISOLATED</b><span>CTF</span><b>ACTIVE</b><span>AI</span><b>MENTOR</b><span>ETHICS</span><b>REQUIRED</b></div></div></div></div>
+  <div class="auth-panel">
+    <div class="auth-brand"><div class="brandmark large"><span></span></div><div><b>CYBERTRIP</b><small>LEARN · LAB · CTF</small></div></div>
+    <div class="auth-kicker">{{ 'WELCOME BACK' if mode=='login' else 'CREATE ACCOUNT' }}</div>
+    <h1>{{ "Hisobingizga kiring" if mode=="login" else "Cyber journey'ni boshlang" }}</h1>
+    <p class="auth-lead">{{ "Progressingizni davom ettiring, laboratoriyalarni ishga tushiring va yangi skill'larni oching." if mode=="login" else "Amaliy kiberxavfsizlikni xavfsiz laboratoriyalar, quiz va CTF orqali o‘rganing." }}</p>
+    <form method="post" class="auth-form" autocomplete="on">
+      {% if mode=="register" %}<label>{{_("email")}}<input name="email" type="email" autocomplete="email" placeholder="you@example.com" required></label>{% endif %}
+      <label>{{_("username")}}<input name="username" autocomplete="username" placeholder="cyber_student" required></label>
+      <label>{{_("password")}}<input name="password" type="password" autocomplete="{{ 'new-password' if mode=='register' else 'current-password' }}" placeholder="••••••••" required></label>
+      {% if mode=="register" %}<label>{{_("confirm")}}<input name="confirm" type="password" autocomplete="new-password" placeholder="••••••••" required></label>
+      <label class="policy-check"><input name="accept_rules" type="checkbox" required><span>Men <a href="{{ url_for('platform.rules') }}" target="_blank" rel="noopener">CYBERTRIP qoidalari</a>, foydalanish shartlari va <a href="{{ url_for('platform.lab_safety') }}" target="_blank" rel="noopener">lab xavfsizligi</a> talablarini o‘qidim va qabul qilaman.</span></label>{% endif %}
+      <button class="btn btn-primary btn-lg full" type="submit">{{ "Kirish" if mode=="login" else "Hisob yaratish" }}<span>↗</span></button>
+    </form>
+    <div class="auth-foot">{% if mode=="login" %}{{_("no_account")}} <a href="{{url_for('auth.register')}}">Ro‘yxatdan o‘tish</a>{% else %}{{_("have_account")}} <a href="{{url_for('auth.login')}}">Kirish</a>{% endif %}</div>
+    <div class="auth-legal">Davom etish orqali CYBERTRIP platformasining ta’limiy va xavfsizlik qoidalariga rozilik bildirasiz.</div>
+  </div>
+</section>
+{% endblock %}

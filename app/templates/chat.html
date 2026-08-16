@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Community Chat — CYBERTRIP{% endblock %}
+{% block content %}
+<section class="page-hero terminal-hero">
+  <div><div class="section-kicker">CYBERTRIP_GLOBAL_TERMINAL / COMMUNITY</div><h1>CYBERTRIP Global Terminal</h1><p>CYBERTRIP foydalanuvchilari uchun umumiy va jamoaviy terminal chat.</p></div>
+  <div class="terminal-badge">● COMMUNITY ONLINE</div>
+</section>
+<div class="chat-page-grid">
+  <aside class="chat-sidebar content-panel">
+    <div class="section-kicker">CHANNELS</div>
+    <button class="chat-channel-btn {{'active' if not selected_team else ''}}" data-chat-select="general" data-team-id=""># General</button>
+    {% for team in teams %}<button class="chat-channel-btn {{'active' if selected_team and selected_team.id==team.id else ''}}" data-chat-select="team" data-team-id="{{team.id}}"># team / {{team.name}}</button>{% endfor %}
+    <div class="chat-rules"><b>Community rules</b><span>Hurmat · Spam yo‘q · Shaxsiy ma’lumot yo‘q · Faqat qonuniy ta’lim va lab mavzulari</span></div>
+  </aside>
+  <section class="content-panel chat-panel chat-terminal" data-chat-root data-chat-channel="{{'team' if selected_team else 'general'}}" data-team-id="{{selected_team.id if selected_team else ''}}">
+    <div class="chat-head"><div><div class="section-kicker" data-chat-title># {{selected_team.name if selected_team else 'general'}}</div><h2>cybertrip@community:~$ ./global-chat</h2><p>Xavfsiz aloqa o‘rnatildi · faqat ta'limiy va community mavzulari.</p></div><span class="ai-status ai-live"><i></i> ONLINE</span></div>
+    <div class="chat-messages large" data-chat-messages><div class="chat-empty">Xabarlar yuklanmoqda…</div></div>
+    <form class="chat-form" data-chat-form><input name="body" maxlength="1200" autocomplete="off" placeholder="Xabar yozing…" required><button class="btn btn-primary btn-lg">Yuborish</button></form>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{_("team")}} — CYBERTRIP{% endblock %}
+{% block content %}
+<section class="page-hero terminal-hero">
+  <div>
+    <div class="section-kicker">CYBERTRIP_TEAM_TERMINAL / TEAM</div>
+    <h1>{{_("team")}}</h1>
+    <p>{{_("team_desc")}}</p>
+  </div>
+  <div class="terminal-badge">● TEAM NETWORK ONLINE</div>
+</section>
+
+<div class="team-layout-v2">
+  {% if team %}
+  <section class="terminal-console team-console">
+    <div class="terminal-top"><span>cybertrip@uz:~/team</span><span>bash</span></div>
+    <div class="terminal-body-v2">
+      <div><span class="prompt">$</span> team status</div>
+      <div class="console-ok">✓ {{team.name}}</div>
+      <div>owner: {{user.username}}</div>
+      <div>invite_code: <code>{{team.invite_code}}</code></div>
+      <div>members: {{members|length}}</div>
+    </div>
+    <div class="member-grid-v2">
+      {% for m in members %}
+      <div class="member-card-v2"><span>{{'%02d'|format(loop.index)}}</span><div><b>User #{{m.user_id}}</b><small>{{m.role}}</small></div></div>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <section class="team-create-v2">
+    <div class="section-kicker">TEAM INIT</div>
+    <h2>{{_("team_empty")}}</h2>
+    <p>Team yaratib, birinchi challenge'ingizni birga boshlang.</p>
+    <form method="post" action="{{url_for('platform.team_new')}}">
+      <label>{{_("team_name")}}<input name="team_name" maxlength="100" placeholder="CyberTrip Squad" required></label>
+      <button class="btn btn-primary btn-lg">{{_("create_team")}} →</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if team %}
+  <section class="content-panel team-chat chat-terminal" data-chat-channel="team" data-team-id="{{team.id}}">
+    <div class="section-kicker">TEAM COMMS</div>
+    <div class="chat-head">
+      <div><div class="section-kicker">cybertrip@team:~$ ./team-chat</div><h2>Jamoaviy terminal</h2><p>Team kanaliga faqat jamoa a’zolari kira oladi.</p></div>
+      <a class="btn btn-ghost btn-sm" href="{{url_for('chat.index')}}">Umumiy chat ↗</a>
+    </div>
+    <div class="chat-messages" data-chat-messages><div class="chat-empty">Xabarlar yuklanmoqda…</div></div>
+    <form class="chat-form" data-chat-form>
+      <input name="body" maxlength="1200" autocomplete="off" placeholder="Jamoaga xabar yozing…" required>
+      <button class="btn btn-primary">Yuborish</button>
+    </form>
+  </section>
+  {% endif %}
+
+  <aside class="join-panel">
+    <div class="section-kicker">{{_("join_team")|upper}}</div>
+    <h2>{{_("invite_code")}} mavjudmi?</h2>
+    <p>Jamoa egasidan invite code oling va shu yerda kiriting.</p>
+    <form method="post" action="{{url_for('platform.team_join')}}">
+      <label>{{_("invite_code")}}<input name="invite_code" placeholder="A1B2C3D4" required></label>
+      <button class="btn btn-ghost full">{{_("join_team")}} →</button>
+    </form>
+    <a class="btn btn-ghost full" href="{{url_for('chat.index')}}">Community Chat ↗</a>
+  </aside>
+</div>
+{% endblock %}
