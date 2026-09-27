@@ -1,104 +1,88 @@
-# CYBERTRIP.UZ — Kiberxavfsizlik Ta'lim Ekotizimi va Kiber-Poligon (Cyber Range)
+# CYBERTRIP.UZ — Milliy Kiberxavfsizlik Ta'lim Ekotizimi va Kiber-Poligon (Cyber Range)
 
-**CYBERTRIP.UZ** — O'zbekistonning professional kiberxavfsizlik, axborot xavfsizligi auditi, Web Pentest va CTF musobaqalari bo'yicha keng qamrovli ta'lim platformasi.
+**CYBERTRIP.UZ** — Professional kiberxavfsizlik, axborot xavfsizligi auditi, Web Pentest va CTF musobaqalari bo'yicha keng qamrovli, ishlab chiqarishga (production) to'liq tayyor ta'lim platformasi.
 
 ---
 
-## 🏗️ Arxitektura va Ekotizim
+## 🌟 Platforma Imkoniyatlari
 
-Ushbu platforma zamonaviy monorepo (Turborepo) arxitekturasida barpo etilgan:
+- **6 ta Asosiy O'quv Yo'nalishi (Learning Paths)**: Web Pentest, Linux & Tizim Xavfsizligi, Tarmoq Xavfsizligi, Kiber Asoslar, SOC & Blue Team, CTF Challenge.
+- **15 ta To'liq Kurs & 30 ta Modul**: Barcha darajalar (Boshlang'ichdan Toki Ekspertgacha).
+- **172 ta Mukammal Dars**: Har birida amaliy MDX darslik, nazariya, kod namunalari va xulosalar.
+- **172 ta Interaktiv Quiz**: Har bir dars oxirida avtomatik baholanuvchi test tizimi.
+- **60 ta Amaliy Laboratoriya (Hands-on Labs)**: SQLi, XSS, SSRF, XXE, SSTI, IDOR, JWT, Race Condition, GraphQL, Websocket, Forensics va boshqalar.
+- **18 ta Alohida Nishon Ilova (Target Apps)**: Realistik zaiflik muhitlari (`/targets/`).
+- **Interaktiv Linux Terminali**: `nmap`, `curl`, `netstat`, `ps`, `chmod`, `cat`, `grep` kabi real vositalar bilan.
+- **15 ta CTF Challenge**: Bcrypt xeshli bayroqlar (Flag) va dinamik reyting.
+- **Admin Boshqaruv Paneli**: Jonli statistika, foydalanuvchilar rollarini boshqarish va bloklash, tariflar narxini sozlash va audit jurnallari.
+- **To'lov & Obuna Tizimi**: Free, Pro (Pentester) va Premium (Kiber-Elita) tariflari.
+
+---
+
+## 🏗️ Arxitektura
 
 ```
 cybertrip-uz/
 ├── apps/
-│   ├── web/                    # Next.js 15 (App Router, Tailwind CSS, React 19)
-│   ├── api/                    # NestJS (Prisma ORM, JWT HTTP-Only Cookies, RBAC, Zod)
-│   └── lab-targets/            # Realistik zaiflik maqsadli ilovalari (Cyber Range)
-│       ├── cyberbooks/         # SQL Injection (UNION, Error-based, Auth bypass)
-│       ├── cyberforum/         # XSS (Stored & Reflected Cross-Site Scripting, Cookie theft)
-│       ├── securedocs/         # IDOR / BOLA (Insecure Direct Object Reference)
-│       ├── diagnosticpanel/    # OS Command Injection (System Diagnostics to Root RCE)
-│       ├── sitepreview/        # SSRF (Server-Side Request Forgery & Cloud IAM Metadata)
-│       └── mediavault/         # Unrestricted File Upload (Web-shell to RCE)
+│   ├── web/                    # Next.js 14 (React 19, Tailwind CSS, App Router)
+│   └── api/                    # NestJS (Prisma ORM, JWT HTTP-Only Cookies, RBAC, Zod)
 ├── packages/
-│   ├── database/               # Prisma Schema (42+ relyatsion jadvallar) + seed.ts
-│   ├── types/                  # Umumiy TypeScript interfeyslari va turlari
+│   ├── database/               # Prisma Schema (PostgreSQL) + Master Seed (172 dars, 60 lab)
+│   ├── types/                  # Umumiy TypeScript interfeyslari
 │   ├── validation/             # Zod validatsiya sxemalari
-│   └── i18n/                   # To'liq o'zbek tili lug'ati va tarjima tizimi
-├── targets/                    # Brauzerda mustaqil ishga tushuvchi maqsadli ilovalar
-├── index.html                  # Platforma boshlang'ich kiber-portali va interaktiv kiber-poligoni
-├── css/style.css               # Dark cyber dizayn tizimi
-├── js/script.js                # Interaktiv kiber-poligon va terminal boshqaruvchisi
-├── docker-compose.yml          # PostgreSQL 16 va Redis xizmatlari
-└── turbo.json                  # Turborepo build quvurlari
+│   └── i18n/                   # O'zbek tili lug'ati
+├── nginx.conf                  # Nginx Reverse Proxy (Next.js :3000 + NestJS :4000 + SSE)
+├── Dockerfile.web              # Multi-stage production build (Next.js)
+├── Dockerfile.api              # Multi-stage production build (NestJS)
+├── docker-compose.yml          # Postgres 16, Redis 7, Web, API
+├── cybertrip-production.zip    # Serverga joylashtirish uchun tayyor toza arxiv (564 KB)
+└── .env.example                # Ishlab chiqarish konfiguratsiya andozasi
 ```
 
 ---
 
-## 🎯 6 ta Realistik Ta'lim Laboratoriyalari (Target Apps)
+## 🚀 Serverga Joylashtirish (Production Deployment)
 
-Platformadagi har bir muhim zaiflik o'zining **alohida va realistik dizayndagi veb-ilovasiga** ega:
+### 1-Usul: Git orqali (Tavsiya etiladi)
 
-1. **CyberBooks (SQL Injection)**
-   - *Zaiflik*: Qidiruv va tizimga kirish formasida filtrlanmagan SQL so'rovlari.
-   - *Maqsad*: `UNION SELECT` orqali `users` va `flags` jadvallarini o'g'irlash hamda `' OR 1=1 --` bilan admin huquqini qo'lga kiritish.
-2. **CyberForum (Cross-Site Scripting - XSS)**
-   - *Zaiflik*: Qidiruvda Reflected XSS va izohlar maydonida Stored XSS.
-   - *Maqsad*: Administrator boti tashrif buyurganda uning maxfiy sessiya cookie-faylini tutib olish.
-3. **SecureDocs (IDOR / BOLA)**
-   - *Zaiflik*: Ob'ekt identifikatorlarini (ID) tekshirmasdan to'g'ridan-to'g'ri ko'rsatish.
-   - *Maqsad*: Begona mijozlar va boshqaruvchi direktorning #1001-sonli maxfiy audit hisobotini ochish.
-4. **DiagnosticPanel (Command Injection)**
-   - *Zaiflik*: Server `ping -c 3 {host}` buyrug'iga foydalanuvchi kiritmasi to'g'ridan-to'g'ri uzatilishi.
-   - *Maqsad*: Buyruq ajratgichlari (`;`, `|`, `&`) orqali `/secret/flag.txt` faylini o'qish.
-5. **SitePreview (SSRF & Cloud Metadata)**
-   - *Zaiflik*: Server foydalanuvchi bergan manzilga ichki tarmoqdan so'rov yuborishi.
-   - *Maqsad*: `169.254.169.254` bulut metadata xizmatidan AWS IAM maxfiy kalitlarini tortib olish.
-6. **MediaVault (Unrestricted File Upload)**
-   - *Zaiflik*: Fayl kengaytmalari va MIME turlari yetarli tekshirilmasligi.
-   - *Maqsad*: `.php` yoki `.phtml` web-shell yuklab, serverda masofaviy kodni (RCE) bajarish.
-
----
-
-## 💻 Brauzerdagi Linux Terminali
-
-- Virtual fayllar tizimi (`/`, `/bin`, `/etc`, `/home/student`, `/var/log`, `/tmp`).
-- Bash buyruqlari: `whoami`, `id`, `uname -a`, `ls -la`, `cat`, `grep`, `find`, `ps`, `pwd`, `cd`, `help`, `clear`.
-- Klaviaturaning `↑` va `↓` tugmalari bilan buyruqlar tarixi (History).
-- Real-vaqtda vazifalar bajarilishini tekshirish mexanizmi.
-
----
-
-## 🚩 CTF Arena & Natijalar Jadvali
-
-- Real flag formatlari: `FLAG{...}`.
-- Dinamik ball hisoblash tizimi va birinchi yechim (First Blood) ko'rsatkichi.
-- Web, Crypto, Forensics, Linux va Network toifalaridagi topshiriqlar.
-
----
-
-## 🚀 Ishga Tushirish
-
-### 1-Usul: Tezkor Ko'rish (Fayl orqali)
-Brauzerda `index.html` faylini oching:
-- Barcha 6 ta laboratoriya [Target Apps] to'liq ishlaydi.
-- Interaktiv Linux terminali va CTF flag topshirish to'liq integratsiya qilingan.
-
-### 2-Usul: To'liq Monorepo (Next.js + NestJS + PostgreSQL)
 ```bash
-# 1. PostgreSQL va Redis konteynerlarini ishga tushirish
-docker-compose up -d
+# 1. Loyihani serverga yuklab olish
+git clone https://github.com/shokirovv10/cybertrip.git /var/www/cybertrip-uz
+cd /var/www/cybertrip-uz
 
-# 2. Bog'liqliklarni o'rnatish
-pnpm install
+# 2. Konfiguratsiya faylini sozlash
+cp .env.example .env
+nano .env
 
-# 3. Ma'lumotlar bazasi sxemasini yaratish va seed qilish
-pnpm --filter @cybertrip/database db:push
-pnpm --filter @cybertrip/database db:seed
+# 3. Docker konteynerlarini qurish va ishga tushirish
+docker compose up -d --build
 
-# 4. Web va API dasturlarini birgalikda ishga tushirish
-pnpm dev
+# 4. Ma'lumotlar bazasini generatsiya qilish va 172 dars/60 lab bilan to'ldirish
+docker compose exec api npx prisma db push --schema=./packages/database/prisma/schema.prisma
+docker compose exec api npx ts-node ./packages/database/prisma/seed.ts
 ```
-- **Next.js Web Frontend**: `http://localhost:3000`
-- **NestJS API Backend**: `http://localhost:4000/api`
-- **API Salomatlik holati**: `http://localhost:4000/api/health`
+
+### 2-Usul: ZIP Fayl orqali
+
+Agar Git ishlatishni xohlamasangiz, omborda joylashgan `cybertrip-production.zip` arxivini yuklab olib serverga tashlang:
+```bash
+unzip cybertrip-production.zip -d /var/www/cybertrip-uz
+cd /var/www/cybertrip-uz
+cp .env.example .env
+docker compose up -d --build
+docker compose exec api npx prisma db push --schema=./packages/database/prisma/schema.prisma
+docker compose exec api npx ts-node ./packages/database/prisma/seed.ts
+```
+
+---
+
+## 🔐 Standart Kirish Ma'lumotlari (Seed yuklangandan so'ng)
+
+- **Admin Paneli**: `admin@cybertrip.uz` / `CyberTrip2024!`
+- **Test Talaba**: `student@test.uz` / `student123`
+- **Bosh Murabbiy**: `instructor@cybertrip.uz` / `instructor123`
+
+---
+
+## 📄 Litsenziya
+CYBERTRIP.UZ jamoasi tomonidan ishlab chiqilgan. Barcha huquqlar himoyalangan.
