@@ -239,6 +239,59 @@ export class LabsService {
     },
   ];
 
+  private rateLimits = new Map<string, number[]>();
+  private unlockedHints = new Map<string, Set<number>>();
+  private activeSessions = new Map<string, { status: 'RUNNING' | 'COMPLETED' | 'EXPIRED'; startedAt: Date; expiresAt: Date; pointsEarned?: number }>();
+
+  // Authoritative server-side flags
+  private labFlags: Record<string, string[]> = {
+    'sql-injection-cyberbooks': ['FLAG{sql_1nj3ct10n_m4st3r_2024}', 'FLAG{cyberbooks_sqli_extracted_9821}', 'CTFLAB{sqli_admin_bypass_secured}'],
+    'sqli-login': ['FLAG{sql_1nj3ct10n_m4st3r_2024}', 'FLAG{cyberbooks_admin_authorized_9821}', 'CTFLAB{sqli_admin_bypass_secured}'],
+    'blind-sqli-login-bypass': ['FLAG{blind_sqli_exfiltrated}', 'FLAG{cyberbooks_admin_authorized_9821}', 'CTFLAB{blind_sqli_admin_bypass}'],
+    'stored-xss-cyberforum': ['FLAG{xss_c00k13_st0l3n_by_p3nt3st3r}', 'CTFLAB{stored_xss_forum_cookie}'],
+    'xss-stored': ['FLAG{xss_c00k13_st0l3n_by_p3nt3st3r}', 'CTFLAB{stored_xss_forum_cookie}'],
+    'reflected-xss-search': ['FLAG{reflected_xss_executed_8831}', 'CTFLAB{reflected_xss_search_bypass}'],
+    'xss-reflected': ['FLAG{reflected_xss_executed_8831}', 'CTFLAB{reflected_xss_search_bypass}'],
+    'jwt-none-algorithm-bypass': ['FLAG{jwt_algorithm_none_signature_bypass_8842}', 'CTFLAB{jwt_none_admin_authenticated}'],
+    'jwt-bypass': ['FLAG{jwt_algorithm_none_signature_bypass_8842}', 'CTFLAB{jwt_none_admin_authenticated}'],
+    'idor-order-receipt': ['FLAG{bola_broken_object_auth_leaked_9941}', 'FLAG{bola_privilege_escalation_success_7721}', 'CTFLAB{idor_order_3921_secret}'],
+    'idor-orderhub': ['FLAG{bola_broken_object_auth_leaked_9941}', 'FLAG{bola_privilege_escalation_success_7721}', 'CTFLAB{idor_order_3921_secret}'],
+    'idor-securedocs': ['FLAG{idor_unauthorized_confidential_contract_1001}', 'CTFLAB{idor_securedocs_master_pass}'],
+    'command-injection-diagnostic': ['FLAG{c0mm4nd_1nj3ct10n_r00t_sh3ll_2026}', 'CTFLAB{command_injection_rce_root}'],
+    'cmd-injection': ['FLAG{c0mm4nd_1nj3ct10n_r00t_sh3ll_2026}', 'CTFLAB{command_injection_rce_root}'],
+    'path-traversal-filemanager': ['FLAG{path_traversal_lfi_root_access_1120}', 'CTFLAB{path_traversal_etc_passwd}'],
+    'path-traversal': ['FLAG{path_traversal_lfi_root_access_1120}', 'CTFLAB{path_traversal_etc_passwd}'],
+    'file-upload-mediavault': ['FLAG{unrestricted_file_upload_rce_shell_1337}', 'CTFLAB{webshell_upload_executed}'],
+    'file-upload': ['FLAG{unrestricted_file_upload_rce_shell_1337}', 'CTFLAB{webshell_upload_executed}'],
+    'ssrf-sitepreview': ['FLAG{ssrf_internal_cloud_metadata_iam_keys_8891}', 'FLAG{ssrf_loopback_internal_admin_portal_2026}', 'CTFLAB{ssrf_aws_metadata_leaked}'],
+    'ssrf-preview': ['FLAG{ssrf_internal_cloud_metadata_iam_keys_8891}', 'FLAG{ssrf_loopback_internal_admin_portal_2026}', 'CTFLAB{ssrf_aws_metadata_leaked}'],
+    'xxe-reportmanager': ['FLAG{xxe_xml_entity_file_exfiltrated_3319}', 'CTFLAB{xxe_entity_injection_passwd}'],
+    'xxe-injection': ['FLAG{xxe_xml_entity_file_exfiltrated_3319}', 'CTFLAB{xxe_entity_injection_passwd}'],
+    'ssti-invoicebuilder': ['FLAG{ssti_template_injection_rce_unlocked_7781}', 'CTFLAB{ssti_rce_jinja2_flag}'],
+    'ssti-jinja': ['FLAG{ssti_template_injection_rce_unlocked_7781}', 'CTFLAB{ssti_rce_jinja2_flag}'],
+    'business-logic-shopflow': ['FLAG{business_logic_price_tamper_free_purchase_9921}', 'CTFLAB{price_tamper_checkout_free}'],
+    'business-logic': ['FLAG{business_logic_price_tamper_free_purchase_9921}', 'CTFLAB{price_tamper_checkout_free}'],
+    'race-condition-flashsale': ['FLAG{race_condition_limit_overrun_exploited_4492}', 'CTFLAB{coupon_race_condition_win}'],
+    'race-condition': ['FLAG{race_condition_limit_overrun_exploited_4492}', 'CTFLAB{coupon_race_condition_win}'],
+    'graphql-introspection': ['FLAG{graphql_introspection_schema_leak_6621}', 'CTFLAB{graphql_schema_dump_flag}'],
+    'graphql': ['FLAG{graphql_introspection_schema_leak_6621}', 'CTFLAB{graphql_schema_dump_flag}'],
+    'websocket-support': ['FLAG{websocket_raw_frame_tampering_achieved_5512}', 'CTFLAB{websocket_admin_spoof}'],
+    'websocket': ['FLAG{websocket_raw_frame_tampering_achieved_5512}', 'CTFLAB{websocket_admin_spoof}'],
+    'secureauth-2fa': ['FLAG{auth_bypass_2fa_response_tampering_3389}', 'CTFLAB{auth_2fa_tamper_bypass}'],
+    'cybercase-forensics': ['FLAG{forensics_memory_artifact_recovered_8820}', 'CTFLAB{memory_dump_volatility_flag}'],
+    'inteldesk-osint': ['FLAG{osint_subdomain_intel_discovered_2291}', 'CTFLAB{subdomain_takeover_osint}']
+  };
+
+  private checkRateLimit(key: string, maxAttempts = 5, windowMs = 30000): void {
+    const now = Date.now();
+    const timestamps = (this.rateLimits.get(key) || []).filter(t => now - t < windowMs);
+    if (timestamps.length >= maxAttempts) {
+      throw new BadRequestException("Juda ko'p urinishlar qilindi. Iltimos, 30 soniya kuting (Rate Limit).");
+    }
+    timestamps.push(now);
+    this.rateLimits.set(key, timestamps);
+  }
+
   async getLabs(category?: string, difficulty?: string) {
     let list = this.labsCatalog;
     if (category) list = list.filter((l) => l.category === category);
@@ -246,35 +299,233 @@ export class LabsService {
     return list;
   }
 
-  async getLab(slug: string) {
+  async getLab(slug: string, userId?: string) {
     const lab = this.labsCatalog.find((l) => l.slug === slug || l.id === slug);
-    if (!lab) throw new NotFoundException('Laboratoriya topilmadi');
+    if (!lab) {
+      // Safe generic fallback
+      return {
+        id: slug,
+        slug,
+        title: slug.replace(/-/g, ' ').toUpperCase(),
+        description: "Amaliy kiberxavfsizlik laboratoriyasi",
+        briefing: "Topshiriq ko'rsatmalariga amal qiling va nishon tizimdan flagni oling.",
+        category: "GENERAL",
+        difficulty: "BEGINNER" as const,
+        estimatedMinutes: 30,
+        xpReward: 200,
+        targetApp: "cyberbooks",
+        entryRoute: "/targets/cyberbooks/index.html",
+        objectives: [
+          { id: '1', title: 'Zaiflikni aniqlash', description: 'Nishon tizimda zaiflik mavjudligini aniqlang', points: 50 },
+          { id: '2', title: 'Eksploitatsiyani amalga oshirish', description: 'Zaiflikdan foydalanib kirish huquqini oling', points: 50 },
+          { id: '3', title: 'Flagni qo\'lga kiritish', description: 'Tizim ichidagi maxfiy flagni toping va yuboring', points: 100 },
+        ],
+        hints: [
+          { number: 1, costXp: 20, content: "Kiritish maydonlarini va server javoblarini tekshiring." },
+          { number: 2, costXp: 40, content: "HTTP so'rov parametrlari va headerlarini tahlil qiling." },
+        ]
+      };
+    }
     return lab;
   }
 
+  async getHints(slug: string, userId: string) {
+    const lab = await this.getLab(slug, userId);
+    const userUnlocked = this.unlockedHints.get(`${userId}:${slug}`) || new Set<number>();
+
+    return (lab.hints || []).map((h) => {
+      const isUnlocked = userUnlocked.has(h.number);
+      return {
+        number: h.number,
+        costXp: h.costXp,
+        isUnlocked,
+        content: isUnlocked ? h.content : undefined,
+      };
+    });
+  }
+
   async unlockHint(labSlug: string, hintNumber: number, userId: string) {
-    const lab = await this.getLab(labSlug);
-    const hint = lab.hints.find((h) => h.number === hintNumber);
+    const lab = await this.getLab(labSlug, userId);
+    const hint = (lab.hints || []).find((h) => h.number === hintNumber);
     if (!hint) throw new NotFoundException('Ushbu raqamli yordam (hint) topilmadi.');
 
-    // In production, record XP deduction transaction
-    await this.gamification.awardXp(userId, -hint.costXp, `Laboratoriya yordami ochildi (${lab.title}, Maslahat #${hintNumber})`);
+    const userKey = `${userId}:${labSlug}`;
+    const userUnlocked = this.unlockedHints.get(userKey) || new Set<number>();
+
+    if (userUnlocked.has(hintNumber)) {
+      return {
+        success: true,
+        hintNumber: hint.number,
+        content: hint.content,
+        costXp: 0,
+        message: 'Maslahat allaqachon ochilgan.',
+      };
+    }
+
+    userUnlocked.add(hintNumber);
+    this.unlockedHints.set(userKey, userUnlocked);
+
+    // Deduct penalty via gamification
+    try {
+      await this.gamification.awardXp(userId, -hint.costXp, `Laboratoriya maslahati ochildi (${lab.title}, #${hintNumber})`);
+    } catch {}
 
     return {
       success: true,
       hintNumber: hint.number,
       content: hint.content,
       costXp: hint.costXp,
-      message: `Maslahat ochildi. -${hint.costXp} XP yozildi.`,
+      message: `Maslahat ochildi. Mukofotdan -${hint.costXp} XP ushlab qolinadi.`,
+    };
+  }
+
+  async submitLabFlag(slug: string, flag: string, userId: string, sessionId?: string) {
+    if (!flag || !flag.trim()) {
+      throw new BadRequestException("Flag maydoni bo'sh bo'lishi mumkin emas.");
+    }
+
+    const rateKey = `${userId}:${slug}`;
+    this.checkRateLimit(rateKey);
+
+    const sessionKey = `${userId}:${slug}`;
+    const activeSession = this.activeSessions.get(sessionKey);
+    if (activeSession && activeSession.status === 'COMPLETED') {
+      return {
+        success: false,
+        alreadySolved: true,
+        message: "Ushbu laboratoriya siz tomoningizdan allaqachon topshirilgan.",
+        status: 'COMPLETED',
+        points: activeSession.pointsEarned || 200,
+      };
+    }
+
+    const lab = await this.getLab(slug, userId);
+    const cleanFlag = flag.trim();
+
+    // Check against authoritative server-side flags
+    const validFlags = this.labFlags[slug] || [
+      `FLAG{${slug.replace(/-/g, '_')}_completed}`,
+      `CTFLAB{${slug.replace(/-/g, '_')}_pwned}`,
+      `FLAG{${slug}}`
+    ];
+
+    const isMatch = validFlags.some(
+      (f) => f.toLowerCase() === cleanFlag.toLowerCase() || cleanFlag.toLowerCase().includes(f.toLowerCase())
+    );
+
+    if (!isMatch) {
+      // Record failed attempt
+      try {
+        const dbLab = await this.prisma.lab.findFirst({ where: { slug } });
+        if (dbLab) {
+          await this.prisma.labSubmission.create({
+            data: {
+              userId,
+              labId: dbLab.id,
+              sessionId: sessionId || 'default-session',
+              isCorrect: false,
+              feedback: 'Noto\'g\'ri flag',
+              xpAwarded: 0
+            }
+          });
+        }
+      } catch {}
+
+      throw new BadRequestException("Noto'g'ri flag. Katta-kichik harflar va formatni tekshirib qayta urinib ko'ring.");
+    }
+
+    // Correct flag! Calculate penalties
+    const unlocked = this.unlockedHints.get(rateKey) || new Set<number>();
+    let penaltyXp = 0;
+    unlocked.forEach((hNum) => {
+      const h = lab.hints?.find((x) => x.number === hNum);
+      if (h) penaltyXp += h.costXp;
+    });
+
+    const finalPoints = Math.max(50, lab.xpReward - penaltyXp);
+
+    // Update active session state
+    this.activeSessions.set(sessionKey, {
+      status: 'COMPLETED',
+      startedAt: activeSession?.startedAt || new Date(),
+      expiresAt: activeSession?.expiresAt || new Date(Date.now() + 2 * 60 * 60 * 1000),
+      pointsEarned: finalPoints,
+    });
+
+    // Award XP
+    try {
+      await this.gamification.awardXp(userId, finalPoints, `Laboratoriya topshirildi: ${lab.title}`);
+    } catch {}
+
+    // Record success in DB
+    try {
+      const dbLab = await this.prisma.lab.findFirst({ where: { slug } });
+      if (dbLab) {
+        await this.prisma.labSubmission.create({
+          data: {
+            userId,
+            labId: dbLab.id,
+            sessionId: sessionId || 'default-session',
+            isCorrect: true,
+            feedback: 'Flag muvaffaqiyatli qabul qilindi',
+            xpAwarded: finalPoints
+          }
+        });
+      }
+    } catch {}
+
+    return {
+      success: true,
+      status: 'COMPLETED',
+      message: "Tabriklaymiz! Challenge Solved! Flag to'g'ri qabul qilindi.",
+      points: finalPoints,
+      xp: finalPoints,
+      penaltyDeducted: penaltyXp,
     };
   }
 
   async startSession(labId: string, userId: string) {
+    const sessionKey = `${userId}:${labId}`;
+    const expiresAt = new Date(Date.now() + 45 * 60 * 1000); // 45 minutes
+    
+    this.activeSessions.set(sessionKey, {
+      status: 'RUNNING',
+      startedAt: new Date(),
+      expiresAt,
+    });
+
     return {
       sessionId: `session-${Date.now()}`,
       status: 'RUNNING',
       startedAt: new Date(),
-      expiresAt: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours
+      expiresAt,
+      durationSeconds: 2700,
+    };
+  }
+
+  async getSession(labId: string, userId: string) {
+    const sessionKey = `${userId}:${labId}`;
+    const existing = this.activeSessions.get(sessionKey);
+
+    if (!existing) {
+      return this.startSession(labId, userId);
+    }
+
+    // Check expiry
+    if (existing.status === 'RUNNING' && new Date() > existing.expiresAt) {
+      existing.status = 'EXPIRED';
+      this.activeSessions.set(sessionKey, existing);
+    }
+
+    const remainingSeconds = Math.max(0, Math.floor((existing.expiresAt.getTime() - Date.now()) / 1000));
+
+    return {
+      sessionId: `session-${labId}`,
+      status: existing.status,
+      startedAt: existing.startedAt,
+      expiresAt: existing.expiresAt,
+      remainingSeconds,
+      pointsEarned: existing.pointsEarned,
     };
   }
 
@@ -288,12 +539,10 @@ export class LabsService {
   }
 
   async validateSession(sessionId: string, userId: string) {
-    await this.gamification.awardXp(userId, 200, 'Laboratoriya muvaffaqiyatli topshirildi');
     return {
       success: true,
-      status: 'COMPLETED',
-      xpAwarded: 200,
-      message: 'Barcha talablar to\'g\'ri bajarildi! +200 XP berildi.',
+      status: 'RUNNING',
+      message: 'Laboratoriyani yakunlash uchun olingan maxfiy flagni Flag Submission maydoniga kiriting.',
     };
   }
 

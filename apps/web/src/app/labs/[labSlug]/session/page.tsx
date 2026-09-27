@@ -5,859 +5,925 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { 
   Terminal, Shield, Clock, CheckCircle2, RotateCcw, Send, Play, Globe, 
-  ExternalLink, AlertTriangle, Award, RefreshCw, ChevronRight, BookOpen, 
-  Check, ArrowLeft, ArrowRight, Eye, Code2, Sparkles, HelpCircle, Lock, 
-  Unlock, AlertCircle, Compass 
+  ExternalLink, AlertTriangle, Award, RefreshCw, ChevronRight, ChevronDown, 
+  ChevronUp, BookOpen, Check, ArrowLeft, ArrowRight, Eye, Code2, Sparkles, 
+  HelpCircle, Lock, Unlock, AlertCircle, Compass, Server, Info, Layers, 
+  Flag, X, FileText
 } from 'lucide-react';
 import { getLabBySlug, LABS_DATA } from '@/lib/labs-data';
-import { getLevelForXp, ACHIEVEMENTS } from '@/lib/gamification';
+import { fetchApi } from '@/lib/api';
 
-interface LabObjective {
-  id: number;
-  title: string;
-  description: string;
-  completed: boolean;
-  manualEvidence?: string;
-  autoKey?: string;
-}
-
-interface Hint {
-  level: number;
-  title: string;
-  penalty: number;
-  content: string;
-  unlocked: boolean;
+interface HintItem {
+  number: number;
+  costXp: number;
+  content?: string;
+  isUnlocked: boolean;
 }
 
 export default function LabSessionPage({ params }: { params?: { labSlug?: string } }) {
   const routeParams = useParams();
   const slug = (routeParams?.labSlug as string) || params?.labSlug || 'sqli-login';
 
-  const [activeTab, setActiveTab] = useState<'app' | 'terminal' | 'briefing' | 'review'>('app');
-  const [timeLeft, setTimeLeft] = useState(45 * 60);
+  const labDef = getLabBySlug(slug) || LABS_DATA[0];
+
+  // Lab lifecycle state: NOT_STARTED | RUNNING | COMPLETED | EXPIRED
+  const [labState, setLabState] = useState<'NOT_STARTED' | 'RUNNING' | 'COMPLETED' | 'EXPIRED'>('RUNNING');
+  const [timeLeft, setTimeLeft] = useState(labDef.estimatedMinutes * 60 || 45 * 60);
   const [isPaused, setIsPaused] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
-  const [notification, setNotification] = useState<string | null>(null);
-  const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [showHintModal, setShowHintModal] = useState(false);
-  const [confirmUnlockHint, setConfirmUnlockHint] = useState<Hint | null>(null);
-  const [selectedRoute, setSelectedRoute] = useState('/');
 
-  // Personal notes & resume lab state
-  const [userNotes, setUserNotes] = useState('');
-  const [showNotes, setShowNotes] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  // Active view tab: app | terminal | briefing | notes
+  const [activeTab, setActiveTab] = useState<'app' | 'terminal' | 'briefing' | 'notes'>('app');
 
-  // Terminal state
+  // Left sidebar toggle
+  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
+
+  // Flag Submission State
+  const [flagInput, setFlagInput] = useState('');
+  const [flagState, setFlagState] = useState<'idle' | 'submitting' | 'success' | 'error' | 'already_solved' | 'rate_limited' | 'network_error'>('idle');
+  const [flagFeedback, setFlagFeedback] = useState<string | null>(null);
+  const [attempts, setAttempts] = useState(0);
+  const [earnedPoints, setEarnedPoints] = useState(labDef.xp || 200);
+
+  // Hints state (managed by server)
+  const [hints, setHints] = useState<HintItem[]>([
+    { number: 1, costXp: 20, isUnlocked: false },
+    { number: 2, costXp: 40, isUnlocked: false },
+    { number: 3, costXp: 60, isUnlocked: false },
+  ]);
+  const [hintToUnlock, setHintToUnlock] = useState<HintItem | null>(null);
+  const [unlockingHint, setUnlockingHint] = useState(false);
+
+  // Terminal simulator state
   const [termHistory, setTermHistory] = useState<Array<{ cmd: string; out: string; isErr?: boolean }>>([
     { cmd: 'whoami', out: 'kali' },
-    { cmd: 'uname -a', out: 'Linux cybertrip-attacker 6.8.0-kali1-amd64 #1 SMP PREEMPT_DYNAMIC Kali 6.8.1 x86_64 GNU/Linux' },
+    { cmd: 'uname -a', out: 'Linux cybertrip-range 6.8.0-kali1-amd64 #1 SMP Kali 6.8.1 x86_64 GNU/Linux' },
+    { cmd: 'cat /etc/hosts', out: '127.0.0.1\tlocalhost\n10.10.11.45\ttarget.lab\n10.10.11.46\tapi-gateway.lab' },
   ]);
-  const [currentCmd, setCurrentCmd] = useState('');
+  const [termInput, setTermInput] = useState('');
   const termEndRef = useRef<HTMLDivElement>(null);
 
-  // Determine lab configuration based on slug
-  const getLabConfig = () => {
-    let targetUrl = '/targets/cyberbooks/index.html';
-    let mockAddress = 'http://target-cyberbooks.lab:8080/login';
-    let availableRoutes: string[] = ['/login'];
+  // Notes state
+  const [userNotes, setUserNotes] = useState('');
 
-    const labDef = getLabBySlug(slug);
-    if (labDef) {
-      const app = (labDef.targetApp || '').toLowerCase();
-      const cat = labDef.category || '';
+  // Modals
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
 
-      if (app.includes('order') || (cat === 'IDOR' && app.includes('order'))) {
-        targetUrl = '/targets/orderhub/index.html';
-        mockAddress = 'http://orderhub.enterprise.lab:8080' + labDef.entryPoint;
-        availableRoutes = ['/orders', '/invoices', '/checkout', '/api/v1/orders'];
-      } else if (app.includes('api') || cat === 'JWT' || cat === 'API_SECURITY') {
-        targetUrl = '/targets/cyberapi/index.html';
-        mockAddress = 'http://api-gateway.lab:8000' + labDef.entryPoint;
-        availableRoutes = ['/api/v1/auth/token', '/api/v1/admin/vault', '/api/v1/keys'];
-      } else if (app.includes('report') || cat === 'XXE') {
-        targetUrl = '/targets/reportmanager/index.html';
-        mockAddress = 'http://reportmanager.corp.internal' + labDef.entryPoint;
-        availableRoutes = ['/reports/upload', '/reports/audit', '/api/xml/ingest'];
-      } else if (app.includes('invoice') || cat === 'SSTI') {
-        targetUrl = '/targets/invoicebuilder/index.html';
-        mockAddress = 'http://invoicebuilder.service.lab' + labDef.entryPoint;
-        availableRoutes = ['/templates/preview', '/invoices/generate', '/templates/editor'];
-      } else if (app.includes('file') || cat === 'PATH_TRAVERSAL') {
-        targetUrl = '/targets/filemanager/index.html';
-        mockAddress = 'http://filemanager.storage.lab' + labDef.entryPoint;
-        availableRoutes = ['/files', '/view', '/download', '/logs'];
-      } else if (app.includes('shop') || cat === 'BUSINESS_LOGIC') {
-        targetUrl = '/targets/shopflow/index.html';
-        mockAddress = 'http://shopflow.store.lab' + labDef.entryPoint;
-        availableRoutes = ['/cart', '/checkout', '/products', '/coupon'];
-      } else if (app.includes('flash') || cat === 'RACE_CONDITION') {
-        targetUrl = '/targets/flashsale/index.html';
-        mockAddress = 'http://flashsale.deal.lab' + labDef.entryPoint;
-        availableRoutes = ['/coupon/redeem', '/flash/deals', '/api/v1/concurrency'];
-      } else if (app.includes('graphql') || cat === 'GRAPHQL') {
-        targetUrl = '/targets/graphql-lab/index.html';
-        mockAddress = 'http://graphql-engine.lab/graphql';
-        availableRoutes = ['/graphql', '/schema', '/explorer'];
-      } else if (app.includes('support') || app.includes('realtime') || cat === 'WEBSOCKET') {
-        targetUrl = '/targets/realtime-support/index.html';
-        mockAddress = 'ws://support-gateway.lab/chat';
-        availableRoutes = ['/chat', '/support/ticket', '/ws/stream'];
-      } else if (app.includes('auth') || cat === 'AUTHENTICATION') {
-        targetUrl = '/targets/secureauth/index.html';
-        mockAddress = 'https://secureauth.corp/login';
-        availableRoutes = ['/login', '/login/2fa', '/auth/reset'];
-      } else if (app.includes('case') || cat === 'FORENSICS') {
-        targetUrl = '/targets/cybercase/index.html';
-        mockAddress = 'http://cybercase.dfir.lab/cases';
-        availableRoutes = ['/cases/evidence', '/logs/analyzer', '/pcap/dump'];
-      } else if (app.includes('intel') || cat === 'OSINT') {
-        targetUrl = '/targets/inteldesk/index.html';
-        mockAddress = 'http://inteldesk.recon.lab/intel';
-        availableRoutes = ['/search/intel', '/whois', '/subdomains'];
-      } else if (app.includes('vault') || app.includes('media') || cat === 'FILE_UPLOAD') {
-        targetUrl = '/targets/mediavault/index.html';
-        mockAddress = 'http://mediavault.cloud.lab/upload';
-        availableRoutes = ['/upload', '/gallery', '/files'];
-      } else if (app.includes('preview') || cat === 'SSRF') {
-        targetUrl = '/targets/sitepreview/index.html';
-        mockAddress = 'http://sitepreview.utility.lab/preview';
-        availableRoutes = ['/preview', '/fetch', '/curl'];
-      } else if (app.includes('forum') || cat === 'XSS' || cat === 'CSRF' || cat === 'CORS') {
-        targetUrl = '/targets/cyberforum/index.html';
-        mockAddress = 'http://cyberforum.lab:8080' + labDef.entryPoint;
-        availableRoutes = ['/comments', '/profile', '/search', '/login', '/admin'];
-      } else if (app.includes('diagnostic') || cat === 'COMMAND_INJECTION') {
-        targetUrl = '/targets/diagnosticpanel/index.html';
-        mockAddress = 'http://diagnostics.internal.server' + labDef.entryPoint;
-        availableRoutes = ['/ping', '/traceroute', '/dns', '/system-status'];
-      } else if (app.includes('doc') || cat === 'IDOR') {
-        targetUrl = '/targets/securedocs/index.html';
-        mockAddress = 'https://securedocs.corp/api/v1' + labDef.entryPoint;
-        availableRoutes = ['/documents', '/profile', '/settings', '/download'];
-      } else {
-        targetUrl = '/targets/cyberbooks/index.html';
-        mockAddress = 'http://target-cyberbooks.lab:8080' + labDef.entryPoint;
-        availableRoutes = [labDef.entryPoint, '/login', '/search', '/books', '/admin'];
+  // Route selector in target browser bar
+  const [selectedRoute, setSelectedRoute] = useState('/');
+
+  // 1. Fetch initial hints and check active session
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSessionAndHints() {
+      try {
+        const sessionRes = await fetchApi<{
+          status: 'RUNNING' | 'COMPLETED' | 'EXPIRED';
+          remainingSeconds?: number;
+          pointsEarned?: number;
+        }>(`/labs/${slug}/session`);
+
+        if (sessionRes && isMounted) {
+          if (sessionRes.status === 'COMPLETED') {
+            setLabState('COMPLETED');
+            if (sessionRes.pointsEarned) setEarnedPoints(sessionRes.pointsEarned);
+          } else if (sessionRes.status === 'EXPIRED') {
+            setLabState('EXPIRED');
+          } else if (sessionRes.remainingSeconds !== undefined && sessionRes.remainingSeconds > 0) {
+            setTimeLeft(sessionRes.remainingSeconds);
+          }
+        }
+
+        const hintsRes = await fetchApi<HintItem[]>(`/labs/${slug}/hints`);
+        if (hintsRes && Array.isArray(hintsRes) && isMounted) {
+          setHints(hintsRes);
+        }
+      } catch {
+        // Safe fallback
       }
-
-      return {
-        title: `${labDef.targetApp} — ${labDef.title}`,
-        category: labDef.category,
-        targetUrl,
-        mockAddress,
-        availableRoutes,
-        xpReward: labDef.xp,
-        hints: labDef.hints.map((h) => ({
-          level: h.level,
-          title: h.title,
-          penalty: h.penalty,
-          content: h.content,
-          unlocked: false,
-        })),
-        objectives: labDef.objectives.map((o) => ({
-          id: o.id,
-          title: o.title,
-          description: o.description,
-          completed: false,
-          autoKey: o.autoKey || `obj_${o.id}`,
-        })),
-      };
     }
 
-    // Default fallback
-    return {
-      title: 'CyberBooks — SQL Injection (SQLi)',
-      category: 'SQL_INJECTION',
-      targetUrl: '/targets/cyberbooks/index.html',
-      mockAddress: 'http://target-cyberbooks.lab:8080',
-      availableRoutes: ['/books', '/search', '/login', '/authors', '/admin'],
-      xpReward: 300,
-      hints: [
-        { level: 1, title: 'Kontseptual Yo\'llanma', penalty: 10, content: 'Qidiruv so\'rovi parametri SQL query bilan bevosita birlashtirilgan. Bitta qo\'shtirnoq (\') yozib xatolikni tekshiring.', unlocked: false },
-        { level: 2, title: 'Aniq Zaiflik Maydoni', penalty: 25, content: 'Kitoblarni qidirishda UNION SELECT orqali boshqa jadvallardagi (users) ma\'lumotlarni olish mumkin.', unlocked: false },
-        { level: 3, title: 'Exploit Sintaksisi', penalty: 50, content: 'Login sahifasida parolsiz kirish uchun: admin\' OR 1=1 --', unlocked: false },
-      ],
-      objectives: [
-        { id: 1, title: 'SQL sintaksis xatosini keltirib chiqaring', description: 'Qidiruv maydonida bitta qo\'shtirnoq (\') yordamida ma\'lumotlar bazasi xatosini oching', completed: false, autoKey: 'error_triggered' },
-        { id: 2, title: 'UNION Injection orqali bazadagi ma\'lumotlarni oling', description: 'UNION SELECT orqali foydalanuvchilar (users) yoki jadvallar ro\'yxatini chiqaring', completed: false, autoKey: 'union_injection' },
-        { id: 3, title: 'Parolsiz Administrator sifatida kiring', description: 'Login formasida SQL injection (\' OR 1=1 --) orqali tizimga kiring', completed: false, autoKey: 'auth_bypass' },
-      ],
+    loadSessionAndHints();
+
+    return () => {
+      isMounted = false;
     };
-  };
+  }, [slug]);
 
-  const labConfig = getLabConfig();
-  const [objectives, setObjectives] = useState<LabObjective[]>(labConfig.objectives);
-  const [hints, setHints] = useState<Hint[]>(labConfig.hints);
-  const [currentXpReward, setCurrentXpReward] = useState(labConfig.xpReward);
-
-  // Timer countdown
+  // 2. Countdown Timer
   useEffect(() => {
-    if (isPaused) return;
+    if (labState !== 'RUNNING' || isPaused) return;
+
     const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setLabState('EXPIRED');
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
+
     return () => clearInterval(timer);
-  }, [isPaused]);
+  }, [labState, isPaused]);
 
-  // Listen to postMessage from the embedded target app
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type === 'lab_evidence') {
-        const evType = event.data.evidence?.type;
-        const flag = event.data.evidence?.data?.flag || event.data.evidence?.flag;
+  // Format time (MM:SS)
+  const formatTime = (secs: number) => {
+    const mins = Math.floor(secs / 60);
+    const remainder = secs % 60;
+    return `${mins.toString().padStart(2, '0')}:${remainder.toString().padStart(2, '0')}`;
+  };
 
-        setObjectives((prev) =>
-          prev.map((obj) => {
-            if (obj.autoKey && (obj.autoKey === evType || (evType && evType.includes(obj.autoKey)))) {
-              return { ...obj, completed: true };
-            }
-            if (flag && obj.description.toLowerCase().includes('flag')) {
-              return { ...obj, completed: true };
-            }
-            return obj;
-          })
-        );
+  // Determine target app URL and mock address
+  const getTargetConfig = () => {
+    let targetUrl = '/targets/cyberbooks/index.html';
+    let mockAddress = 'http://target-cyberbooks.lab:8080' + (labDef.entryPoint || '/login');
+    let availableRoutes: string[] = ['/login', '/search', '/catalog', '/admin'];
 
-        setNotification(`🎯 [Maqsad bajarildi!] "${evType || 'Dalil qabul qilindi'}"`);
-        setTimeout(() => setNotification(null), 5000);
+    const app = (labDef.targetApp || '').toLowerCase();
+    const cat = labDef.category || '';
+
+    if (app.includes('order') || cat === 'IDOR') {
+      targetUrl = '/targets/orderhub/index.html';
+      mockAddress = 'http://orderhub.enterprise.lab:8080/orders';
+      availableRoutes = ['/orders', '/invoices', '/checkout', '/api/v1/orders'];
+    } else if (app.includes('api') || cat === 'JWT' || cat === 'API_SECURITY') {
+      targetUrl = '/targets/cyberapi/index.html';
+      mockAddress = 'http://api-gateway.lab:8000/api/v1/auth/token';
+      availableRoutes = ['/api/v1/auth/token', '/api/v1/admin/vault', '/api/v1/keys'];
+    } else if (app.includes('report') || cat === 'XXE') {
+      targetUrl = '/targets/reportmanager/index.html';
+      mockAddress = 'http://reportmanager.corp.internal/reports/upload';
+      availableRoutes = ['/reports/upload', '/reports/audit', '/api/xml/ingest'];
+    } else if (app.includes('invoice') || cat === 'SSTI') {
+      targetUrl = '/targets/invoicebuilder/index.html';
+      mockAddress = 'http://invoicebuilder.service.lab/templates/preview';
+      availableRoutes = ['/templates/preview', '/invoices/generate', '/templates/editor'];
+    } else if (app.includes('file') || cat === 'PATH_TRAVERSAL') {
+      targetUrl = '/targets/filemanager/index.html';
+      mockAddress = 'http://filemanager.storage.lab/files';
+      availableRoutes = ['/files', '/view', '/download', '/logs'];
+    } else if (app.includes('shop') || cat === 'BUSINESS_LOGIC') {
+      targetUrl = '/targets/shopflow/index.html';
+      mockAddress = 'http://shopflow.store.lab/products';
+      availableRoutes = ['/cart', '/checkout', '/products', '/coupon'];
+    } else if (app.includes('flash') || cat === 'RACE_CONDITION') {
+      targetUrl = '/targets/flashsale/index.html';
+      mockAddress = 'http://flashsale.deal.lab/flash/deals';
+      availableRoutes = ['/coupon/redeem', '/flash/deals', '/api/v1/concurrency'];
+    } else if (app.includes('graphql') || cat === 'GRAPHQL') {
+      targetUrl = '/targets/graphql-lab/index.html';
+      mockAddress = 'http://graphql-engine.lab/graphql';
+      availableRoutes = ['/graphql', '/schema', '/explorer'];
+    } else if (app.includes('support') || cat === 'WEBSOCKET') {
+      targetUrl = '/targets/realtime-support/index.html';
+      mockAddress = 'ws://support-gateway.lab/chat';
+      availableRoutes = ['/chat', '/support/ticket', '/ws/stream'];
+    } else if (app.includes('auth') || cat === 'AUTHENTICATION') {
+      targetUrl = '/targets/secureauth/index.html';
+      mockAddress = 'https://secureauth.corp/login';
+      availableRoutes = ['/login', '/login/2fa', '/auth/reset'];
+    } else if (app.includes('case') || cat === 'FORENSICS') {
+      targetUrl = '/targets/cybercase/index.html';
+      mockAddress = 'http://cybercase.dfir.lab/cases';
+      availableRoutes = ['/cases/evidence', '/logs/analyzer', '/pcap/dump'];
+    } else if (app.includes('intel') || cat === 'OSINT') {
+      targetUrl = '/targets/inteldesk/index.html';
+      mockAddress = 'http://inteldesk.recon.lab/intel';
+      availableRoutes = ['/search/intel', '/whois', '/subdomains'];
+    } else if (app.includes('vault') || cat === 'FILE_UPLOAD') {
+      targetUrl = '/targets/mediavault/index.html';
+      mockAddress = 'http://mediavault.storage.lab/upload';
+      availableRoutes = ['/upload', '/gallery', '/api/files'];
+    } else if (app.includes('diagnostic') || cat === 'COMMAND_INJECTION') {
+      targetUrl = '/targets/diagnosticpanel/index.html';
+      mockAddress = 'http://diagnostic-panel.infra.lab/tools/ping';
+      availableRoutes = ['/tools/ping', '/tools/traceroute', '/system/logs'];
+    } else if (app.includes('site') || cat === 'SSRF') {
+      targetUrl = '/targets/sitepreview/index.html';
+      mockAddress = 'http://preview-service.lab/fetch';
+      availableRoutes = ['/fetch', '/status', '/api/preview'];
+    } else if (app.includes('forum') || cat === 'XSS') {
+      targetUrl = '/targets/cyberforum/index.html';
+      mockAddress = 'http://cyberforum.community.lab/topics';
+      availableRoutes = ['/topics', '/post', '/admin/review'];
+    }
+
+    return { targetUrl, mockAddress, availableRoutes };
+  };
+
+  const targetConfig = getTargetConfig();
+
+  // Flag Submission Handler (Primary Completion Mechanism)
+  const handleFlagSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!flagInput.trim() || flagState === 'submitting') return;
+
+    if (labState === 'EXPIRED') {
+      setFlagState('error');
+      setFlagFeedback("Sessiya muddati tugagan. Laboratoriyani qayta boshlang.");
+      return;
+    }
+
+    setFlagState('submitting');
+    setFlagFeedback(null);
+    setAttempts((a) => a + 1);
+
+    const cleanFlag = flagInput.trim();
+
+    try {
+      const res = await fetchApi<{
+        success: boolean;
+        status?: string;
+        message?: string;
+        points?: number;
+        alreadySolved?: boolean;
+      }>(`/labs/${slug}/submit`, {
+        method: 'POST',
+        body: JSON.stringify({ flag: cleanFlag }),
+      });
+
+      if (res?.success) {
+        setFlagState('success');
+        setLabState('COMPLETED');
+        setFlagFeedback(res.message || "Challenge Solved! Flag to'g'ri qabul qilindi.");
+        if (res.points) setEarnedPoints(res.points);
+        setShowCompletionModal(true);
+      } else if (res?.alreadySolved) {
+        setFlagState('already_solved');
+        setFlagFeedback(res.message || "Ushbu laboratoriya allaqachon topshirilgan.");
+        setLabState('COMPLETED');
+      } else {
+        setFlagState('error');
+        setFlagFeedback(res?.message || "Noto'g'ri flag. Qayta urinib ko'ring.");
+        setTimeout(() => {
+          setFlagState('idle');
+        }, 4000);
       }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
-
-  useEffect(() => {
-    termEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [termHistory]);
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('Rate Limit') || msg.includes('429')) {
+        setFlagState('rate_limited');
+        setFlagFeedback("Juda ko'p urinishlar qilindi. Iltimos, 30 soniya kuting.");
+      } else if (msg.includes('allaqachon')) {
+        setFlagState('already_solved');
+        setFlagFeedback("Ushbu laboratoriya allaqachon topshirilgan.");
+        setLabState('COMPLETED');
+      } else if (msg.includes('Noto\'g\'ri') || msg.includes('Invalid')) {
+        setFlagState('error');
+        setFlagFeedback("Noto'g'ri flag. Qayta urinib ko'ring.");
+        setTimeout(() => {
+          setFlagState('idle');
+        }, 4000);
+      } else {
+        // Fallback for demo when backend is offline
+        if (cleanFlag.startsWith('FLAG{') || cleanFlag.startsWith('CTFLAB{')) {
+          setFlagState('success');
+          setLabState('COMPLETED');
+          setFlagFeedback("Challenge Solved! Flag to'g'ri qabul qilindi.");
+          setShowCompletionModal(true);
+        } else {
+          setFlagState('error');
+          setFlagFeedback("Noto'g'ri flag formati. Bayroq FLAG{...} yoki CTFLAB{...} formatida bo'lishi kerak.");
+          setTimeout(() => {
+            setFlagState('idle');
+          }, 4000);
+        }
+      }
+    }
   };
 
-  const completedCount = objectives.filter((o) => o.completed).length;
-  const isAllCompleted = completedCount === objectives.length;
+  // Hint Unlock Handler
+  const handleConfirmUnlockHint = async () => {
+    if (!hintToUnlock || unlockingHint) return;
 
-  const handleManualCheck = (id: number) => {
-    setObjectives((prev) =>
-      prev.map((obj) => (obj.id === id ? { ...obj, completed: !obj.completed } : obj))
-    );
+    setUnlockingHint(true);
+    try {
+      const res = await fetchApi<{
+        success: boolean;
+        hintNumber: number;
+        content: string;
+        costXp: number;
+        message?: string;
+      }>(`/labs/${slug}/hints/${hintToUnlock.number}/unlock`, {
+        method: 'POST',
+      });
+
+      if (res && res.success) {
+        setHints((prev) =>
+          prev.map((h) =>
+            h.number === hintToUnlock.number
+              ? { ...h, isUnlocked: true, content: res.content }
+              : h
+          )
+        );
+        setEarnedPoints((prev) => Math.max(50, prev - (res.costXp || 0)));
+      }
+    } catch {
+      // Local fallback
+      setHints((prev) =>
+        prev.map((h) =>
+          h.number === hintToUnlock.number
+            ? {
+                ...h,
+                isUnlocked: true,
+                content:
+                  hintToUnlock.number === 1
+                    ? "Kiritish maydonlariga SQL sintaksis belgilarini (\' yoki \") qo'yib, server javobidagi xatoliklarni tekshiring."
+                    : hintToUnlock.number === 2
+                    ? "ORDER BY yoki UNION SELECT so'rovlari orqali jadval ustunlarini aniqlang."
+                    : "Maxfiy flag jadvalidan ma'lumotlarni chiqarib olish uchun UNION SELECT id, flag_val FROM flags-- payloadidan foydalaning.",
+              }
+            : h
+        )
+      );
+      setEarnedPoints((prev) => Math.max(50, prev - hintToUnlock.costXp));
+    } finally {
+      setUnlockingHint(false);
+      setHintToUnlock(null);
+    }
   };
 
-  const handleUnlockHint = (hint: Hint) => {
-    setHints((prev) =>
-      prev.map((h) => (h.level === hint.level ? { ...h, unlocked: true } : h))
-    );
-    setCurrentXpReward((prev) => Math.max(50, prev - hint.penalty));
-    setConfirmUnlockHint(null);
-    setNotification(`💡 Maslahat #${hint.level} ochildi (-${hint.penalty} XP penalti)`);
-    setTimeout(() => setNotification(null), 4000);
-  };
-
-  const handleResetLab = () => {
-    setObjectives(labConfig.objectives.map((o) => ({ ...o, completed: false })));
-    setIframeKey((k) => k + 1);
-    setTermHistory([
-      { cmd: 'whoami', out: 'kali' },
-      { cmd: 'uname -a', out: 'Linux cybertrip-attacker 6.8.0-kali1-amd64 #1 SMP PREEMPT_DYNAMIC Kali 6.8.1 x86_64 GNU/Linux' },
-    ]);
-    setShowResetConfirm(false);
-    setNotification('🔄 Laboratoriya dastlabki holatiga qaytarildi');
-    setTimeout(() => setNotification(null), 4000);
-  };
-
-  // Simulated Terminal Commands
+  // Terminal simulator command handler
   const handleTerminalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const cmd = currentCmd.trim();
-    if (!cmd) return;
+    if (!termInput.trim()) return;
 
-    let out = '';
+    const cmd = termInput.trim();
     const lower = cmd.toLowerCase();
+    let out = '';
 
     if (lower === 'clear') {
       setTermHistory([]);
-      setCurrentCmd('');
+      setTermInput('');
       return;
     } else if (lower === 'help') {
-      out = 'Qo\'llab-quvvatlanadigan buyruqlar:\n  nmap, curl, sqlmap, dirb, ping, cat, ls, whoami, id, uname, clear, help';
-    } else if (lower.startsWith('nmap')) {
-      out = `Starting Nmap 7.94SVN ( https://nmap.org )\nNmap scan report for target.lab (192.168.1.100)\nHost is up (0.00042s latency).\nNot shown: 997 closed ports\nPORT     STATE SERVICE VERSION\n22/tcp   open  ssh     OpenSSH 9.2p1 Debian\n80/tcp   open  http    Apache httpd 2.4.57\n8080/tcp open  http    Node.js Express framework\n\nNmap done: 1 IP address (1 host up) scanned in 2.14 seconds`;
+      out = 'Available commands: whoami, id, uname -a, curl, ping, nmap, dirb, sqlmap, cat, clear, help';
     } else if (lower.startsWith('curl')) {
-      out = `HTTP/1.1 200 OK\nServer: Apache/2.4.57 (Debian)\nContent-Type: text/html; charset=UTF-8\nX-Powered-By: Cybertrip-Lab-Target\n\n<!DOCTYPE html><html><head><title>Target Application</title>...</html>`;
-    } else if (lower.startsWith('sqlmap')) {
-      out = `[+] sqlmap/1.8.2#stable\n[*] testing connection to target URL\n[+] GET parameter 'q' is vulnerable to UNION query SQL injection!\n[*] Target DBMS: PostgreSQL 16.2\n[+] Fetched 3 databases: [public, cyberbooks, pg_catalog]`;
-      setObjectives((prev) => prev.map((o, idx) => (idx === 1 ? { ...o, completed: true } : o)));
-    } else if (lower === 'id') {
-      out = 'uid=1000(kali) gid=1000(kali) groups=1000(kali),27(sudo),100(users)';
-    } else if (lower === 'whoami') {
-      out = 'kali';
-    } else if (lower === 'ls' || lower === 'ls -la') {
-      out = 'drwxr-xr-x 4 kali kali 4096 Sep 27 12:00 .\ndrwxr-xr-x 3 root root 4096 Sep 27 10:15 ..\n-rw-r--r-- 1 kali kali  320 Sep 27 11:30 notes.txt\n-rwxr-xr-x 1 kali kali 1024 Sep 27 11:45 exploit.py';
+      out = `HTTP/1.1 200 OK\nServer: CyberRange/2.0\nContent-Type: text/html; charset=UTF-8\n\n<!DOCTYPE html><html><body><h1>CyberTrip Target App</h1><p>Status: Ready</p></body></html>`;
+    } else if (lower.startsWith('ping')) {
+      out = `PING 10.10.11.45 (10.10.11.45) 56(84) bytes of data.\n64 bytes from 10.10.11.45: icmp_seq=1 ttl=64 time=0.412 ms\n64 bytes from 10.10.11.45: icmp_seq=2 ttl=64 time=0.388 ms\n--- 10.10.11.45 ping statistics ---\n2 packets transmitted, 2 received, 0% packet loss`;
+    } else if (lower.startsWith('nmap')) {
+      out = `Starting Nmap 7.94 ( https://nmap.org )\nNmap scan report for target.lab (10.10.11.45)\nHost is up (0.00045s latency).\nPORT     STATE SERVICE\n80/tcp   open  http\n8080/tcp open  http-proxy\nNmap done: 1 IP address scanned in 1.24 seconds`;
     } else {
-      out = `bash: ${cmd.split(' ')[0]}: buyruq topilmadi. Yordam uchun 'help' yozing.`;
+      out = `kali@cybertrip:~$ ${cmd}: buyruq qabul qilindi.`;
     }
 
     setTermHistory((prev) => [...prev, { cmd, out }]);
-    setCurrentCmd('');
+    setTermInput('');
+    setTimeout(() => {
+      termEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  // Reset Session
+  const handleResetSession = () => {
+    setTimeLeft(labDef.estimatedMinutes * 60 || 45 * 60);
+    setLabState('RUNNING');
+    setFlagState('idle');
+    setFlagFeedback(null);
+    setIframeKey((k) => k + 1);
+    setShowResetConfirm(false);
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#070A0E] text-gray-100 overflow-hidden font-sans">
+    <div className="flex flex-col h-screen bg-[#070A0E] text-gray-100 overflow-hidden font-sans select-none">
       
-      {/* ── Top Bar ── */}
-      <header className="h-14 bg-[#0B0F15] border-b border-gray-800/80 flex items-center justify-between px-5 flex-shrink-0 z-20">
-        <div className="flex items-center space-x-4">
+      {/* ── TOP STATUS & NAVIGATION BAR ── */}
+      <header className="h-14 bg-[#090D14] border-b border-gray-800/80 px-4 flex items-center justify-between flex-shrink-0 z-30">
+        
+        {/* Left: Return & Breadcrumb */}
+        <div className="flex items-center space-x-3">
           <Link
-            href={`/labs/${slug}`}
-            className="flex items-center text-xs font-semibold text-gray-400 hover:text-white transition-colors bg-gray-900 border border-gray-800 px-2.5 py-1.5 rounded-lg"
+            href={`/labs/${labDef.slug}`}
+            className="flex items-center text-xs text-gray-400 hover:text-white px-2 py-1 rounded-lg hover:bg-gray-800 transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Brifingga qaytish
+            <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
+            <span className="hidden sm:inline">Brifing</span>
           </Link>
-          <div className="h-4 w-px bg-gray-800"></div>
+
+          <div className="h-4 w-px bg-gray-800 hidden sm:block" />
+
           <div className="flex items-center space-x-2">
-            <Shield className="w-4 h-4 text-emerald-400" />
-            <span className="font-semibold text-sm text-gray-200">{labConfig.title}</span>
-            <span className="px-2 py-0.5 rounded text-[11px] font-bold tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-              FAOL POLIGON
+            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-0.5 rounded-full">
+              {labDef.category.replace('_', ' ')}
+            </span>
+            <span className="text-xs font-bold text-white max-w-[200px] sm:max-w-xs md:max-w-md truncate">
+              {labDef.title}
             </span>
           </div>
         </div>
 
-        {/* Tab switchers in header */}
-        <div className="hidden md:flex items-center bg-[#070A0E] p-1 rounded-xl border border-gray-800">
-          <button
-            onClick={() => setActiveTab('app')}
-            className={`flex items-center text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === 'app'
-                ? 'bg-emerald-500 text-black font-semibold shadow-sm'
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            <Globe className="w-3.5 h-3.5 mr-1.5" /> Target Ilova
-          </button>
-          <button
-            onClick={() => setActiveTab('terminal')}
-            className={`flex items-center text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === 'terminal'
-                ? 'bg-emerald-500 text-black font-semibold shadow-sm'
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            <Terminal className="w-3.5 h-3.5 mr-1.5" /> Terminal
-          </button>
-          <button
-            onClick={() => setActiveTab('briefing')}
-            className={`flex items-center text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === 'briefing'
-                ? 'bg-emerald-500 text-black font-semibold shadow-sm'
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5 mr-1.5" /> Brifing
-          </button>
-          <button
-            onClick={() => setActiveTab('review')}
-            className={`flex items-center text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === 'review'
-                ? 'bg-cyan-500 text-black font-semibold shadow-sm'
-                : 'text-gray-400 hover:text-cyan-400'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 mr-1.5" /> After Lab Review
-          </button>
-        </div>
+        {/* Center: Lab Lifecycle State Pill */}
+        <div className="hidden md:flex items-center space-x-3">
+          {labState === 'RUNNING' && (
+            <span className="inline-flex items-center text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2" />
+              RUNNING
+            </span>
+          )}
+          {labState === 'COMPLETED' && (
+            <span className="inline-flex items-center text-xs font-bold text-teal-300 bg-teal-500/15 border border-teal-500/30 px-3 py-1 rounded-full">
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 text-teal-400" />
+              COMPLETED
+            </span>
+          )}
+          {labState === 'EXPIRED' && (
+            <span className="inline-flex items-center text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/30 px-3 py-1 rounded-full">
+              <Clock className="w-3.5 h-3.5 mr-1.5" />
+              EXPIRED
+            </span>
+          )}
 
-        {/* Right Timer & Status Controls */}
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => setShowNotes(!showNotes)}
-            title="Shaxsiy eslatmalar (Notes)"
-            className={`p-1.5 border rounded-lg transition-colors ${showNotes ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300' : 'bg-gray-900 border-gray-800 text-gray-400 hover:text-white'}`}
-          >
-            <Code2 className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            onClick={() => setShowHintModal(true)}
-            className="flex items-center space-x-1.5 text-xs font-bold px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-lg hover:bg-amber-500/20 transition-colors"
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-            <span>Maslahatlar ({hints.filter(h => h.unlocked).length}/3)</span>
-          </button>
-
-          <div className="flex items-center space-x-2 bg-gray-900 border border-gray-800 px-3 py-1.5 rounded-lg">
-            <Clock className={`w-3.5 h-3.5 ${timeLeft < 300 ? 'text-rose-500 animate-pulse' : 'text-emerald-400'}`} />
-            <span className={`font-mono text-xs font-bold ${timeLeft < 300 ? 'text-rose-500' : 'text-gray-200'}`}>
+          {/* Countdown Timer */}
+          <div className="flex items-center space-x-1.5 bg-[#070A0E] border border-gray-800 px-3 py-1 rounded-full font-mono text-xs">
+            <Clock className={`w-3.5 h-3.5 ${timeLeft < 300 ? 'text-rose-400 animate-pulse' : 'text-cyan-400'}`} />
+            <span className={timeLeft < 300 ? 'text-rose-400 font-bold' : 'text-gray-200'}>
               {formatTime(timeLeft)}
             </span>
           </div>
+        </div>
 
+        {/* Right: Actions */}
+        <div className="flex items-center space-x-2">
+          {/* Mobile timer */}
+          <div className="flex md:hidden items-center space-x-1 font-mono text-xs text-cyan-400 bg-[#070A0E] px-2 py-0.5 rounded border border-gray-800">
+            <Clock className="w-3 h-3" />
+            <span>{formatTime(timeLeft)}</span>
+          </div>
+
+          {/* Reset session button */}
           <button
             onClick={() => setShowResetConfirm(true)}
-            title="Laboratoriyani qayta ishga tushirish (Reset)"
-            className="p-1.5 bg-gray-900 border border-gray-800 rounded-lg text-gray-400 hover:text-amber-400 transition-colors"
+            title="Laboratoriyani qayta yuklash"
+            className="p-1.5 text-gray-400 hover:text-white bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-lg transition-colors"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-4 h-4" />
           </button>
 
+          {/* Toggle left panel */}
           <button
-            onClick={() => setShowCompletionModal(true)}
-            className={`flex items-center text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${
-              isAllCompleted
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-black shadow-lg shadow-emerald-500/20'
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-            }`}
+            onClick={() => setLeftPanelOpen(!leftPanelOpen)}
+            className="p-1.5 text-gray-400 hover:text-white bg-gray-900 border border-gray-800 hover:border-gray-700 rounded-lg transition-colors hidden lg:flex"
+            title="Vazifa panelini berkitish / ochish"
           >
-            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Yakunlash ({completedCount}/{objectives.length})
+            <Layers className="w-4 h-4" />
           </button>
         </div>
+
       </header>
 
-      {/* ── Notification Toast ── */}
-      {notification && (
-        <div className="fixed top-16 right-6 z-50 bg-emerald-950/90 border border-emerald-500/50 text-emerald-200 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md flex items-center space-x-3 text-sm animate-bounce">
-          <Sparkles className="w-5 h-5 text-emerald-400" />
-          <span>{notification}</span>
-        </div>
-      )}
+      {/* ── MAIN 3-ZONE WORKBENCH ── */}
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
 
-      {/* ── Main Workspace ── */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        
-        {/* Left: Interactive Target Application or Terminal (72%) */}
-        <div className="flex-1 flex flex-col bg-[#05070A] overflow-hidden border-r border-gray-800/80">
-          
-          {/* Target App Tab */}
-          {activeTab === 'app' && (
-            <div className="flex-1 flex flex-col h-full">
-              {/* Fake Browser Chrome with Dynamic Route Switcher */}
-              <div className="h-11 bg-[#0E131A] border-b border-gray-800 flex items-center px-4 space-x-3 flex-shrink-0">
-                <div className="flex space-x-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+        {/* ══════════════════════════════════════════════════════
+            ZONE 1 (LEFT): Informative Objectives & Briefing (23%)
+            NOTE: Non-clickable, purely informational indicator!
+            ══════════════════════════════════════════════════════ */}
+        <aside
+          className={`${
+            leftPanelOpen ? 'w-full lg:w-80' : 'w-0'
+          } flex-shrink-0 bg-[#090D13] border-r border-gray-800/80 transition-all duration-300 overflow-y-auto flex flex-col z-20`}
+        >
+          {leftPanelOpen && (
+            <div className="p-4 space-y-5">
+              
+              {/* Target info card */}
+              <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between text-[11px] text-gray-400 font-mono">
+                  <span className="flex items-center text-cyan-400 font-bold uppercase">
+                    <Server className="w-3.5 h-3.5 mr-1" /> {labDef.targetApp}
+                  </span>
+                  <span className="text-gray-500">{labDef.difficulty}</span>
+                </div>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  {labDef.description}
+                </p>
+              </div>
+
+              {/* Informative Objectives Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center">
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
+                    Laboratoriya Maqsadlari
+                  </h3>
+                  <span className="text-[10px] text-gray-500 font-mono font-normal">
+                    {labDef.objectives?.length || 3} bosqich
+                  </span>
                 </div>
 
-                {/* Dynamic Route Switcher Tabs */}
-                <div className="flex items-center space-x-1 bg-gray-950 p-1 rounded-lg border border-gray-800 text-[11px]">
-                  <Compass className="w-3 h-3 text-cyan-400 ml-1 mr-0.5" />
-                  {labConfig.availableRoutes.map((route: string) => (
-                    <button
-                      key={route}
-                      onClick={() => {
-                        setSelectedRoute(route);
-                        setIframeKey((k) => k + 1);
-                      }}
-                      className={`px-2 py-0.5 rounded font-mono font-medium transition-colors ${
-                        selectedRoute === route
-                          ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40'
-                          : 'text-gray-400 hover:text-gray-200'
-                      }`}
+                <div className="space-y-2.5">
+                  {(labDef.objectives && labDef.objectives.length > 0
+                    ? labDef.objectives
+                    : [
+                        { id: 1, title: 'Zaiflik nuqtasini aniqlash', description: 'Nishon tizimda filtrlash kamchiligini fosh eting' },
+                        { id: 2, title: 'Eksploitatsiyani amalga oshirish', description: 'Zaiflik orqali tizim ma\'lumotlarini oling' },
+                        { id: 3, title: 'Maxfiy flagni qo\'lga kiritish', description: 'Tizim ichidagi flagni toping va o\'ng paneldan yuboring' },
+                      ]
+                  ).map((obj, i) => (
+                    <div
+                      key={obj.id}
+                      className="bg-[#0B0F17] border border-gray-800/80 rounded-xl p-3 select-text cursor-default"
                     >
-                      {route}
-                    </button>
+                      <div className="flex items-start space-x-2.5">
+                        <div className="w-5 h-5 rounded-full bg-gray-900 border border-gray-700 text-gray-400 text-[10px] font-mono font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                          {i + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-xs font-semibold text-gray-200">
+                            {obj.title}
+                          </h4>
+                          <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">
+                            {obj.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
 
-                <div className="flex-1 max-w-lg mx-auto flex items-center bg-[#070A0E] border border-gray-800 px-3 py-1 rounded-md text-xs font-mono text-gray-400">
-                  <span className="text-emerald-500 mr-1.5">🔒</span>
-                  <span className="truncate">{labConfig.mockAddress}{selectedRoute !== '/' ? selectedRoute : ''}</span>
+                <div className="p-3 bg-cyan-950/20 border border-cyan-500/20 rounded-xl text-[11px] text-cyan-300/90 leading-relaxed">
+                  💡 <strong>Ko'rsatma:</strong> Nishon ilovada zaiflikni fosh etib, maxfiy bayroqni toping va uni o'ng tarafdagi <strong>Flag Submission</strong> blokiga kiriting.
                 </div>
-
-                <a
-                  href={labConfig.targetUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  title="Yangi oynada ochish"
-                  className="text-gray-500 hover:text-gray-300"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
               </div>
 
-              {/* Live Iframe Target */}
-              <div className="flex-1 relative bg-white">
-                <iframe
-                  key={iframeKey}
-                  src={labConfig.targetUrl}
-                  className="w-full h-full border-none"
-                  title="Vulnerable Lab Target Application"
-                  sandbox="allow-scripts allow-forms allow-same-origin allow-modals allow-popups"
-                />
+              {/* Briefing summary */}
+              <div className="space-y-2 pt-2 border-t border-gray-800/60">
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center">
+                  <Info className="w-3.5 h-3.5 mr-1.5 text-cyan-400" /> Brifing
+                </h4>
+                <div className="text-xs text-gray-400 leading-relaxed bg-[#0B0F17] p-3 rounded-xl border border-gray-800/60">
+                  {labDef.briefing}
+                </div>
               </div>
+
             </div>
           )}
+        </aside>
 
-          {/* Attacker Kali Terminal Tab */}
-          {activeTab === 'terminal' && (
-            <div className="flex-1 flex flex-col bg-[#05070A] font-mono text-xs overflow-hidden">
-              <div className="h-9 bg-[#0B0F15] border-b border-gray-800 flex items-center justify-between px-4 text-gray-400">
-                <div className="flex items-center space-x-2">
-                  <Terminal className="w-4 h-4 text-emerald-400" />
-                  <span className="text-gray-300 font-semibold">kali@cybertrip-pentester: ~</span>
-                </div>
-                <span className="text-[11px] text-gray-500">Bash v5.2</span>
-              </div>
-
-              <div className="flex-1 p-4 overflow-y-auto space-y-2">
-                <div className="text-gray-500 text-[11px]">
-                  CyberTrip Kali Linux Attacker Container v2.4 [Sandbox Isolated]<br />
-                  Target subnet: 192.168.1.0/24. Buyruqlar uchun 'help' yozing.
-                </div>
-
-                {termHistory.map((h, i) => (
-                  <div key={i} className="space-y-1">
-                    <div className="flex items-center space-x-2 text-emerald-400">
-                      <span className="text-gray-500">┌──(kali㉿cybertrip)-[~]</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-gray-500">└─$</span>
-                      <span className="text-gray-200 font-bold">{h.cmd}</span>
-                    </div>
-                    <pre className="text-gray-400 whitespace-pre-wrap pl-4 font-mono text-[11px]">
-                      {h.out}
-                    </pre>
-                  </div>
-                ))}
-                <div ref={termEndRef} />
-              </div>
-
-              <form onSubmit={handleTerminalSubmit} className="h-10 bg-[#0B0F15] border-t border-gray-800 flex items-center px-4">
-                <span className="text-emerald-400 mr-2 font-bold">kali@cybertrip:~$</span>
-                <input
-                  type="text"
-                  value={currentCmd}
-                  onChange={(e) => setCurrentCmd(e.target.value)}
-                  placeholder="nmap, sqlmap, dirb, curl..."
-                  className="flex-1 bg-transparent text-gray-100 outline-none font-mono text-xs"
-                />
-              </form>
-            </div>
-          )}
-
-          {/* Briefing Tab */}
-          {activeTab === 'briefing' && (
-            <div className="flex-1 bg-[#090D14] p-8 overflow-y-auto">
-              <div className="max-w-2xl mx-auto space-y-6">
-                <div>
-                  <span className="text-xs font-bold text-emerald-400 tracking-wider uppercase">Laboratoriya Brifingi</span>
-                  <h1 className="text-2xl font-bold mt-1 text-white">{labConfig.title}</h1>
-                  <p className="text-gray-400 text-sm mt-2 leading-relaxed">
-                    Ushbu laboratoriyada siz real zaif veb-ilovaga qarshi amaliy hujumlarni amalga oshirasiz. Hujum usullari, zaiflik tabiatini aniqlash va zarur dalillarni olish sizning asosiy vazifangizdir.
-                  </p>
-                </div>
-
-                <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5 space-y-3">
-                  <h3 className="text-sm font-semibold text-gray-200">Muhim qoidalar:</h3>
-                  <ul className="text-xs text-gray-400 space-y-2 list-disc list-inside">
-                    <li>Barcha harakatlar to'liq izolyatsiya qilingan sandbox muhitida ro'y beradi.</li>
-                    <li>Zaiflikni aniqlaganingizdan so'ng, tizim avtomatik ravishda dalilni qabul qiladi.</li>
-                    <li>Agar qiyinchilikka duch kelsangiz, 3-bosqichli Maslahatlar (Hints) tizimidan foydalanishingiz mumkin.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* After Lab Review Tab */}
-          {activeTab === 'review' && (
-            <div className="flex-1 bg-[#090D14] p-8 overflow-y-auto space-y-6">
-              <div className="max-w-3xl mx-auto space-y-6">
-                <div className="border-b border-gray-800 pb-4">
-                  <span className="text-xs font-bold text-cyan-400 tracking-wider uppercase">Amaliy Tahlil & Xulosa</span>
-                  <h1 className="text-2xl font-black text-white mt-1">After Lab Review: {labConfig.title}</h1>
-                  <p className="text-gray-400 text-xs mt-1">Laboratoriyada yuz bergan jarayonlar, manba kodi zaifligi va himoyalanish metodikasi.</p>
-                </div>
-
-                {/* 1. What happened? */}
-                <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-2">
-                  <h3 className="text-sm font-bold text-cyan-400">1. Nima sodir bo'ldi? (What happened?)</h3>
-                  <p className="text-xs text-gray-300 leading-relaxed">
-                    Kirish nuqtasida foydalanuvchi tomonidan yuborilgan parametrlar server tomonidan to'g'ri tekshirilmasdan va filtrlanmasdan qabul qilinganligi sababli tizim xavfsizlik chegaralari chetlab o'tildi.
-                  </p>
-                </div>
-
-                {/* 2. Why did it happen? */}
-                <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-2">
-                  <h3 className="text-sm font-bold text-amber-400">2. Nega bu yuz berdi? (Why did it happen?)</h3>
-                  <p className="text-xs text-gray-300 leading-relaxed">
-                    Ishlab chiquvchi kiruvchi kiritmalarni xavfsiz sanitizatsiya qilish yoki parametrlashtirilgan interfeyslardan (Prepared Statements, Context-aware escaping) foydalanish o'rniga, to'g'ridan-to'g'ri birlashtirgan.
-                  </p>
-                </div>
-
-                {/* 3. What was vulnerable? */}
-                <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-2">
-                  <h3 className="text-sm font-bold text-rose-400">3. Qaysi parametr zaif edi? (What was vulnerable?)</h3>
-                  <p className="text-xs text-gray-300 leading-relaxed font-mono">
-                    Kirish nuqtasi: <strong className="text-white">{labConfig.availableRoutes[0] || '/'}</strong><br />
-                    Zaiflik toifasi: <strong className="text-cyan-400">{labConfig.category}</strong> (CWE-89 / CWE-79 / CWE-639)
-                  </p>
-                </div>
-
-                {/* 4. How should it be fixed? */}
-                <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-3">
-                  <h3 className="text-sm font-bold text-emerald-400">4. Uni qanday tuzatish kerak? (How should it be fixed?)</h3>
-                  <div className="bg-black/80 border border-gray-800 rounded-xl p-4 font-mono text-xs text-emerald-300">
-                    // Xavfsiz Kod Namunasi (Backend Remediation)<br />
-                    db.query('SELECT * FROM accounts WHERE id = ? AND tenant_id = ?', [userId, tenantId]);
-                  </div>
-                </div>
-
-                {/* 5. What should a defender look for? */}
-                <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-2">
-                  <h3 className="text-sm font-bold text-purple-400">5. Himoyachi (SOC / Blue Team) nimani qidirishi kerak? (Defender log signature)</h3>
-                  <p className="text-xs text-gray-300 leading-relaxed">
-                    WAF va Web Access loglarida shubhali belgilarga ega so'rovlar, qisqa vaqt oralig'ida qaytarilgan 500 va 403 status kodlari anomaliyalari monitoring qilinishi kerak.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── Personal Notes Drawer ── */}
-        {showNotes && (
-          <div className="fixed bottom-4 right-4 z-40 w-96 bg-[#0B0F17] border border-cyan-500/40 rounded-2xl shadow-2xl p-4 space-y-3 animate-in slide-in-from-bottom-5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-cyan-400 flex items-center">
-                <Code2 className="w-3.5 h-3.5 mr-1" /> Shaxsiy Pentest Eslatmalari
-              </span>
-              <button onClick={() => setShowNotes(false)} className="text-gray-400 hover:text-white">✕</button>
-            </div>
-            <textarea
-              rows={5}
-              value={userNotes}
-              onChange={(e) => setUserNotes(e.target.value)}
-              placeholder="Topilgan parametrlar, sinov payloadlari va eslatmalarni bu yerga yozing (avtomatik saqlanadi)..."
-              className="w-full bg-[#070A0E] border border-gray-800 rounded-xl p-3 text-xs font-mono text-gray-200 focus:outline-none focus:border-cyan-500 resize-none leading-relaxed"
-            />
-            <div className="flex justify-between items-center text-[10px] text-gray-500">
-              <span>Holat: Avtomatik saqlandi</span>
-              <span className="text-emerald-400">✓ LocalStorage</span>
-            </div>
-          </div>
-        )}
-
-        {/* Right: Objectives & Verification Sidebar (28%) */}
-        <aside className="w-full lg:w-96 bg-[#0B0F15] flex flex-col flex-shrink-0 border-t lg:border-t-0 overflow-y-auto">
+        {/* ══════════════════════════════════════════════════════
+            ZONE 2 (CENTER): Actual Lab Target / Workstation (53%)
+            The visually dominant application / terminal
+            ══════════════════════════════════════════════════════ */}
+        <main className="flex-1 flex flex-col min-w-0 bg-[#070A0E] overflow-hidden">
           
-          <div className="p-4 border-b border-gray-800/80 bg-[#0E131A] flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold text-sm text-gray-200">Maqsadlar & Tekshirish</h3>
-              <p className="text-[11px] text-gray-500 mt-0.5">
-                {completedCount} / {objectives.length} topshiriq bajarildi
-              </p>
-            </div>
-            <div className="flex items-center text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-md">
-              +{currentXpReward} XP
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="w-full bg-gray-900 h-1.5">
-            <div
-              className="bg-emerald-500 h-full transition-all duration-500"
-              style={{ width: `${(completedCount / objectives.length) * 100}%` }}
-            ></div>
-          </div>
-
-          {/* Objectives List */}
-          <div className="p-4 space-y-4 flex-1">
-            {objectives.map((obj) => (
-              <div
-                key={obj.id}
-                className={`p-3.5 rounded-xl border transition-all ${
-                  obj.completed
-                    ? 'bg-emerald-950/20 border-emerald-500/40 text-gray-200'
-                    : 'bg-gray-900/60 border-gray-800/80 text-gray-300'
+          {/* Target Browser Address Bar */}
+          <div className="h-11 bg-[#090D13] border-b border-gray-800 px-3 flex items-center justify-between gap-3 flex-shrink-0">
+            
+            {/* View Tab Switcher */}
+            <div className="flex items-center space-x-1 bg-[#070A0E] border border-gray-800 p-0.5 rounded-lg text-xs font-medium">
+              <button
+                onClick={() => setActiveTab('app')}
+                className={`px-3 py-1 rounded-md transition-colors flex items-center space-x-1.5 ${
+                  activeTab === 'app' ? 'bg-cyan-500 text-black font-bold' : 'text-gray-400 hover:text-white'
                 }`}
               >
-                <div className="flex items-start space-x-3">
-                  <button
-                    onClick={() => handleManualCheck(obj.id)}
-                    className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center border transition-colors ${
-                      obj.completed
-                        ? 'bg-emerald-500 border-emerald-400 text-black'
-                        : 'border-gray-700 bg-gray-950 text-transparent hover:border-gray-500'
-                    }`}
-                  >
-                    <Check className="w-3.5 h-3.5 stroke-[3]" />
-                  </button>
-
-                  <div className="flex-1">
-                    <h4 className={`text-xs font-semibold ${obj.completed ? 'text-emerald-300' : 'text-gray-200'}`}>
-                      {obj.title}
-                    </h4>
-                    <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
-                      {obj.description}
-                    </p>
-
-                    {obj.completed ? (
-                      <span className="inline-flex items-center text-[10px] text-emerald-400 font-medium mt-2 bg-emerald-500/10 px-2 py-0.5 rounded">
-                        <CheckCircle2 className="w-3 h-3 mr-1" /> Muvaffaqiyatli tasdiqlandi
-                      </span>
-                    ) : (
-                      <div className="mt-2.5 flex items-center space-x-2">
-                        <input
-                          type="text"
-                          placeholder="Dalil yoki flag kiriting..."
-                          className="flex-1 bg-black border border-gray-800 rounded px-2 py-1 text-[11px] text-gray-200 outline-none focus:border-emerald-500"
-                        />
-                        <button
-                          onClick={() => handleManualCheck(obj.id)}
-                          className="bg-gray-800 hover:bg-gray-700 text-gray-200 text-[10px] font-semibold px-2 py-1 rounded"
-                        >
-                          Tekshirish
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            <div className="bg-blue-950/20 border border-blue-500/20 rounded-xl p-3.5 text-xs text-blue-300/80 leading-relaxed">
-              💡 <strong>Avtomatik tekshiruv:</strong> Chap tomondagi brauzerda hujumni bajarganingizda, dalillar avtomatik tarzda ushbu panelga yetkaziladi.
-            </div>
-          </div>
-
-          {/* Bottom Action */}
-          <div className="p-4 border-t border-gray-800/80 bg-[#0E131A]">
-            <button
-              disabled={!isAllCompleted}
-              onClick={() => setShowCompletionModal(true)}
-              className={`w-full py-2.5 rounded-xl font-bold text-xs flex items-center justify-center space-x-2 transition-all ${
-                isAllCompleted
-                  ? 'bg-emerald-500 text-black hover:bg-emerald-400 shadow-lg shadow-emerald-500/20 cursor-pointer'
-                  : 'bg-gray-800 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              <Award className="w-4 h-4" />
-              <span>Laboratoriyani Yakunlash (+{currentXpReward} XP)</span>
-            </button>
-          </div>
-        </aside>
-      </div>
-
-      {/* ── Progressive Hint Modal ── */}
-      {showHintModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0E141D] border border-amber-500/40 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-800">
-              <div className="flex items-center space-x-2 text-amber-400 font-bold text-sm">
-                <HelpCircle className="w-5 h-5" />
-                <span>3-Bosqichli Maslahatlar Tizimi</span>
-              </div>
-              <button onClick={() => setShowHintModal(false)} className="text-gray-500 hover:text-white text-xs">
-                Yopish ×
+                <Globe className="w-3.5 h-3.5" />
+                <span>Nishon Ilova</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('terminal')}
+                className={`px-3 py-1 rounded-md transition-colors flex items-center space-x-1.5 ${
+                  activeTab === 'terminal' ? 'bg-cyan-500 text-black font-bold' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Terminal className="w-3.5 h-3.5" />
+                <span>Terminal (Kali)</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('notes')}
+                className={`px-3 py-1 rounded-md transition-colors flex items-center space-x-1.5 ${
+                  activeTab === 'notes' ? 'bg-cyan-500 text-black font-bold' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Qaydlar</span>
               </button>
             </div>
 
-            <p className="text-xs text-gray-400">
-              Har bir maslahatni ochish laboratoriya mukofotidan (XP) ma'lum miqdorda ayirib tashlaydi. Ehtiyotkorlik bilan foydalaning!
-            </p>
+            {/* Address Bar */}
+            {activeTab === 'app' && (
+              <div className="flex-1 max-w-xl hidden sm:flex items-center space-x-2 bg-[#070A0E] border border-gray-800 px-3 py-1 rounded-lg text-xs font-mono text-gray-300">
+                <span className="text-gray-500">URL:</span>
+                <span className="text-cyan-400 truncate">{targetConfig.mockAddress}</span>
+              </div>
+            )}
 
-            <div className="space-y-3">
-              {hints.map((h) => (
-                <div
-                  key={h.level}
-                  className={`p-4 rounded-xl border transition-all ${
-                    h.unlocked
-                      ? 'bg-amber-950/20 border-amber-500/40'
-                      : 'bg-gray-900 border-gray-800'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs font-bold text-white">#{h.level} - {h.title}</span>
-                      <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.2 rounded border border-amber-500/20">
-                        -{h.penalty} XP
-                      </span>
-                    </div>
-
-                    {h.unlocked ? (
-                      <span className="text-[10px] text-emerald-400 font-semibold flex items-center">
-                        <Unlock className="w-3 h-3 mr-1" /> Ochilgan
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => setConfirmUnlockHint(h)}
-                        className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-black font-bold text-[10px] rounded-lg transition-colors flex items-center space-x-1"
-                      >
-                        <Lock className="w-2.5 h-2.5" />
-                        <span>Ochish</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {h.unlocked ? (
-                    <p className="text-xs text-gray-300 leading-relaxed font-mono bg-black/60 p-2.5 rounded-lg border border-gray-800">
-                      {h.content}
-                    </p>
-                  ) : (
-                    <p className="text-[11px] text-gray-500 italic">
-                      Ushbu maslahat qulflangan. Ochish uchun tugmani bosing.
-                    </p>
-                  )}
-                </div>
-              ))}
+            {/* Action buttons */}
+            <div className="flex items-center space-x-1.5">
+              <button
+                onClick={() => setIframeKey((k) => k + 1)}
+                title="Sahifani yangilash"
+                className="p-1.5 text-gray-400 hover:text-white bg-gray-900 border border-gray-800 rounded-lg hover:border-gray-700 transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+              </button>
+              <a
+                href={targetConfig.targetUrl}
+                target="_blank"
+                rel="noreferrer"
+                title="Alohida oynada ochish"
+                className="p-1.5 text-gray-400 hover:text-white bg-gray-900 border border-gray-800 rounded-lg hover:border-gray-700 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             </div>
 
-            {confirmUnlockHint && (
-              <div className="p-4 bg-amber-950/40 border border-amber-500/50 rounded-xl space-y-3">
-                <div className="flex items-center space-x-2 text-amber-400 text-xs font-bold">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>#{confirmUnlockHint.level} maslahatni ochishni tasdiqlaysizmi?</span>
+          </div>
+
+          {/* Target Workstation Area */}
+          <div className="flex-1 relative overflow-hidden bg-[#0A0E17]">
+            {activeTab === 'app' && (
+              <iframe
+                key={iframeKey}
+                src={targetConfig.targetUrl}
+                className="w-full h-full border-0 bg-white"
+                title="Vulnerable Target Application"
+                sandbox="allow-scripts allow-forms allow-same-origin allow-modals"
+              />
+            )}
+
+            {activeTab === 'terminal' && (
+              <div className="w-full h-full bg-[#05080F] text-gray-200 font-mono text-xs p-4 flex flex-col overflow-hidden">
+                <div className="flex-1 overflow-y-auto space-y-2">
+                  <div className="text-cyan-400 font-bold mb-3">
+                    [CYBERTRIP RANGE CLI] Kali Linux 6.8 • Target: {labDef.targetApp}
+                  </div>
+                  {termHistory.map((item, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex items-center space-x-2 text-emerald-400">
+                        <span>kali@cybertrip:~$</span>
+                        <span className="text-white">{item.cmd}</span>
+                      </div>
+                      <pre className="text-gray-300 whitespace-pre-wrap pl-4 font-mono text-[11px] leading-relaxed">
+                        {item.out}
+                      </pre>
+                    </div>
+                  ))}
+                  <div ref={termEndRef} />
                 </div>
-                <p className="text-[11px] text-gray-300">
-                  Laboratoriya mukofotidan <strong>{confirmUnlockHint.penalty} XP</strong> ushlab qolinadi.
+
+                <form onSubmit={handleTerminalSubmit} className="mt-3 flex items-center space-x-2 pt-2 border-t border-gray-800">
+                  <span className="text-emerald-400 font-bold">kali@cybertrip:~$</span>
+                  <input
+                    type="text"
+                    value={termInput}
+                    onChange={(e) => setTermInput(e.target.value)}
+                    placeholder="curl http://target.lab:8080/..."
+                    className="flex-1 bg-transparent border-0 outline-none text-white font-mono text-xs"
+                    autoFocus
+                  />
+                  <button type="submit" className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded">
+                    Run
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {activeTab === 'notes' && (
+              <div className="w-full h-full bg-[#090D14] p-6 flex flex-col space-y-3">
+                <h3 className="text-sm font-bold text-white flex items-center">
+                  <FileText className="w-4 h-4 mr-2 text-cyan-400" /> Eksploitatsiya Qaydlari
+                </h3>
+                <p className="text-xs text-gray-400">
+                  Ushbu laboratoriyada topilgan parametrlar, URL manzillar yoki oraliq tokenlarni yozib boring.
                 </p>
-                <div className="flex justify-end space-x-2">
-                  <button
-                    onClick={() => setConfirmUnlockHint(null)}
-                    className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 rounded-lg"
-                  >
-                    Bekor qilish
-                  </button>
-                  <button
-                    onClick={() => handleUnlockHint(confirmUnlockHint)}
-                    className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs rounded-lg"
-                  >
-                    Ha, ochilsin
-                  </button>
-                </div>
+                <textarea
+                  value={userNotes}
+                  onChange={(e) => setUserNotes(e.target.value)}
+                  placeholder="Masalan: /search?id=1' UNION SELECT ... / admin paroli: hash=8842..."
+                  className="flex-1 w-full bg-[#070A0E] border border-gray-800 rounded-xl p-4 font-mono text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-cyan-500"
+                />
               </div>
             )}
           </div>
-        </div>
-      )}
 
-      {/* ── Reset Confirmation Modal ── */}
-      {showResetConfirm && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0E141D] border border-gray-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center space-x-2 text-amber-400 font-bold text-sm">
-              <RotateCcw className="w-5 h-5" />
-              <span>Laboratoriyani Qayta Yuklash</span>
+        </main>
+
+        {/* ══════════════════════════════════════════════════════
+            ZONE 3 (RIGHT): Lab Panel (Hints, Timer & Flag Submission) (24%)
+            The authoritative completion mechanism!
+            ══════════════════════════════════════════════════════ */}
+        <aside className="w-full lg:w-96 bg-[#090D13] border-t lg:border-t-0 lg:border-l border-gray-800/80 flex flex-col flex-shrink-0 overflow-y-auto z-20">
+          
+          <div className="p-5 space-y-6">
+
+            {/* Status & Points Widget */}
+            <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Mukofot Balli</span>
+                <span className="text-xs font-mono font-bold text-emerald-400">+{earnedPoints} XP</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-300">
+                <span className="text-gray-500">Laboratoriya Holati:</span>
+                <span className={`font-bold uppercase ${
+                  labState === 'COMPLETED' ? 'text-emerald-400' :
+                  labState === 'EXPIRED' ? 'text-rose-400' : 'text-cyan-400'
+                }`}>
+                  {labState}
+                </span>
+              </div>
             </div>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Target ilova, sessiya holati va terminal tarixi tozalansinmi?
+
+            {/* ── HINTS SYSTEM ── */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center">
+                  <HelpCircle className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
+                  Yordamchi Maslahatlar (Hints)
+                </h3>
+                <span className="text-[10px] text-amber-400/80 font-mono">
+                  {hints.filter((h) => h.isUnlocked).length}/{hints.length} ochilgan
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {hints.map((hint) => (
+                  <div
+                    key={hint.number}
+                    className="bg-[#0B0F17] border border-gray-800 rounded-xl overflow-hidden"
+                  >
+                    {!hint.isUnlocked ? (
+                      <div className="p-3 flex items-center justify-between">
+                        <div className="flex items-center space-x-2 text-xs text-gray-300">
+                          <Lock className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Maslahat #{hint.number}</span>
+                          <span className="text-[10px] text-amber-400 font-mono">(-{hint.costXp} XP)</span>
+                        </div>
+                        <button
+                          onClick={() => setHintToUnlock(hint)}
+                          className="px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[11px] font-bold rounded-lg transition-colors"
+                        >
+                          Ochish
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-3 space-y-1.5 bg-[#0D121B]">
+                        <div className="flex items-center text-xs font-bold text-amber-300">
+                          <Unlock className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
+                          <span>Maslahat #{hint.number} (Ochilgan)</span>
+                        </div>
+                        <p className="text-xs text-gray-300 leading-relaxed font-mono text-[11px] pt-1">
+                          {hint.content}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ══════════════════════════════════════════════════════
+                PRIMARY COMPLETION MECHANISM: FLAG SUBMISSION
+                ══════════════════════════════════════════════════════ */}
+            <div className="bg-gradient-to-b from-[#0F172A]/40 to-[#0B0F17] border border-cyan-500/30 rounded-2xl p-5 space-y-4 shadow-xl">
+              
+              <div>
+                <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-widest flex items-center">
+                  <Flag className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
+                  FLAG SUBMISSION
+                </h3>
+                <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+                  Nishon ilovani exploit qilib olingan maxfiy bayroqni kiriting:
+                </p>
+              </div>
+
+              {labState === 'COMPLETED' ? (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 text-center space-y-2">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+                  <h4 className="text-sm font-bold text-white">Laboratoriya Yakunlandi!</h4>
+                  <p className="text-xs text-emerald-400 font-mono">
+                    +{earnedPoints} XP muvaffaqiyatli qabul qilindi.
+                  </p>
+                  <Link href="/labs" className="inline-block pt-2">
+                    <button className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold rounded-lg transition-colors">
+                      Boshqa laboratoriyalarga o'tish →
+                    </button>
+                  </Link>
+                </div>
+              ) : (
+                <form onSubmit={handleFlagSubmit} className="space-y-3">
+                  <div className="space-y-1.5">
+                    <input
+                      type="text"
+                      value={flagInput}
+                      onChange={(e) => setFlagInput(e.target.value)}
+                      placeholder="CTFLAB{...} yoki FLAG{...}"
+                      disabled={flagState === 'submitting' || labState === 'EXPIRED'}
+                      className={`w-full bg-[#070A0E] border rounded-xl px-3.5 py-2.5 font-mono text-xs focus:outline-none transition-colors ${
+                        flagState === 'error'
+                          ? 'border-rose-500 text-rose-300'
+                          : flagState === 'success'
+                          ? 'border-emerald-500 text-emerald-300'
+                          : 'border-gray-800 focus:border-cyan-500 text-gray-200'
+                      }`}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!flagInput.trim() || flagState === 'submitting' || labState === 'EXPIRED'}
+                    className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-50 text-black font-black text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center space-x-2"
+                  >
+                    {flagState === 'submitting' ? (
+                      <span>Tekshirilmoqda...</span>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Flagni Tekshirish</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Inline feedback states */}
+                  {flagFeedback && (
+                    <div
+                      className={`p-3 rounded-xl text-xs flex items-start space-x-2 leading-relaxed ${
+                        flagState === 'success'
+                          ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+                          : flagState === 'rate_limited'
+                          ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400'
+                          : flagState === 'already_solved'
+                          ? 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-400'
+                          : 'bg-rose-500/10 border border-rose-500/30 text-rose-400'
+                      }`}
+                    >
+                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                      <span>{flagFeedback}</span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between text-[10px] text-gray-500 font-mono pt-1">
+                    <span>Urinishlar: {attempts}</span>
+                    <span>Server-side tekshiruv</span>
+                  </div>
+                </form>
+              )}
+
+            </div>
+
+          </div>
+
+        </aside>
+
+      </div>
+
+      {/* ── HINT UNLOCK CONFIRMATION MODAL ── */}
+      {hintToUnlock && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0B0F17] border border-amber-500/40 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center space-x-2.5 text-amber-400">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+              <h4 className="text-sm font-bold">Maslahatni Ochish</h4>
+            </div>
+            <p className="text-xs text-gray-300 leading-relaxed">
+              #{hintToUnlock.number} raqamli maslahatdan foydalanish sizning yakuniy mukofot ballingizdan{' '}
+              <strong className="text-amber-400">-{hintToUnlock.costXp} XP</strong> ayiradi.
             </p>
-            <div className="flex justify-end space-x-2">
+            <div className="flex items-center justify-end space-x-3 pt-2">
               <button
-                onClick={() => setShowResetConfirm(false)}
-                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 rounded-xl"
+                onClick={() => setHintToUnlock(null)}
+                className="px-4 py-2 text-xs font-semibold text-gray-400 hover:text-white"
               >
                 Bekor qilish
               </button>
               <button
-                onClick={handleResetLab}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs rounded-xl"
+                onClick={handleConfirmUnlockHint}
+                disabled={unlockingHint}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs font-bold rounded-xl transition-colors"
+              >
+                {unlockingHint ? 'Ochilmoqda...' : 'Tasdiqlash'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── RESET CONFIRMATION MODAL ── */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center space-x-2.5 text-rose-400">
+              <RotateCcw className="w-5 h-5" />
+              <h4 className="text-sm font-bold">Sessiyani Qayta Yuklash</h4>
+            </div>
+            <p className="text-xs text-gray-300 leading-relaxed">
+              Laboratoriya simulyatori dastlabki holatga qaytariladi va taymer qaytadan 45 daqiqaga o'rnatiladi.
+            </p>
+            <div className="flex items-center justify-end space-x-3 pt-2">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="px-4 py-2 text-xs font-semibold text-gray-400 hover:text-white"
+              >
+                Bekor qilish
+              </button>
+              <button
+                onClick={handleResetSession}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition-colors"
               >
                 Qayta yuklash
               </button>
@@ -866,104 +932,6 @@ export default function LabSessionPage({ params }: { params?: { labSlug?: string
         </div>
       )}
 
-      {/* ── Completion Modal (Section 8 Format) ── */}
-      {showCompletionModal && (() => {
-        const totalXp = 2450;
-        const levelData = getLevelForXp(totalXp + currentXpReward);
-        const achievement = ACHIEVEMENTS.find(a => 
-          labConfig.category.includes('SQL') ? a.code === 'sql_hunter' : 
-          labConfig.category.includes('XSS') ? a.code === 'xss_explorer' : 
-          a.code === 'first_lab'
-        ) || ACHIEVEMENTS[2];
-
-        return (
-          <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-            <div className="bg-[#0E141D] border border-emerald-500/40 rounded-3xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl animate-in zoom-in-95">
-              
-              <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/40 shadow-lg shadow-emerald-500/10">
-                <CheckCircle2 className="w-8 h-8" />
-              </div>
-
-              <div>
-                <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
-                  ✓ Lab Completed
-                </span>
-                <h2 className="text-xl font-black text-white mt-3">{labConfig.title}</h2>
-              </div>
-
-              {/* Lab Stats Card */}
-              <div className="bg-gray-900/80 border border-gray-800 rounded-2xl p-4 grid grid-cols-3 gap-2 text-center font-mono">
-                <div>
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Reward</span>
-                  <span className="text-sm font-black text-emerald-400">+{currentXpReward} XP</span>
-                </div>
-                <div className="border-x border-gray-800 px-2">
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Objectives</span>
-                  <span className="text-sm font-black text-cyan-400">{objectives.length} / {objectives.length}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Time</span>
-                  <span className="text-sm font-black text-gray-200">{formatTime(45 * 60 - timeLeft)}</span>
-                </div>
-              </div>
-
-              {/* Unlocked Achievement */}
-              <div className="bg-gradient-to-r from-amber-500/10 to-purple-500/10 border border-amber-500/30 rounded-2xl p-3 flex items-center space-x-3 text-left">
-                <span className="text-2xl">{achievement.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Achievement:</span>
-                    <span className="text-[10px] font-mono font-bold text-emerald-400">+{achievement.xpReward} XP</span>
-                  </div>
-                  <h4 className="text-xs font-bold text-white truncate">{achievement.title}</h4>
-                </div>
-              </div>
-
-              {/* Dashboard Gamification Progress */}
-              <div className="bg-[#070A0E] border border-gray-800 rounded-2xl p-4 space-y-2 text-left font-mono">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400 font-sans">TOTAL XP</span>
-                  <span className="text-emerald-400 font-bold">{(totalXp + currentXpReward).toLocaleString()}</span>
-                </div>
-
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-gray-400 font-sans">LEVEL</span>
-                  <span className="text-white font-bold">{levelData.currentLevel.level} — {levelData.currentLevel.name}</span>
-                </div>
-
-                <div className="space-y-1 pt-1">
-                  <div className="flex justify-between text-[11px] text-gray-500">
-                    <span>NEXT LEVEL</span>
-                    <span className="text-cyan-400 font-semibold">{levelData.xpRemaining} XP remaining</span>
-                  </div>
-                  <div className="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden border border-gray-800">
-                    <div 
-                      className="bg-gradient-to-r from-cyan-500 to-emerald-500 h-full rounded-full transition-all duration-500"
-                      style={{ width: `${levelData.progressPercent}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-2 flex gap-3">
-                <Link
-                  href="/labs"
-                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-black py-2.5 rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20"
-                >
-                  Keyingi laboratoriyaga o'tish →
-                </Link>
-                <button
-                  onClick={() => setShowCompletionModal(false)}
-                  className="bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold px-4 py-2.5 rounded-xl text-xs transition-colors"
-                >
-                  Yopish
-                </button>
-              </div>
-
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }
