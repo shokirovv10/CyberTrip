@@ -14,9 +14,10 @@ import { getLabBySlug, LABS_DATA } from '@/lib/labs-data';
 export default function LessonViewerPage({ 
   params 
 }: { 
-  params: Promise<{ pathSlug: string; courseSlug: string; moduleSlug: string; lessonSlug: string }> 
+  params: any 
 }) {
-  const resolvedParams = use(params);
+  const resolvedParams: { pathSlug: string; courseSlug: string; moduleSlug: string; lessonSlug: string } =
+    params && typeof (params as any)?.then === 'function' ? use(params as any) : (params || {});
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<'theory' | 'quiz' | 'practice' | 'lab'>('theory');
   const [isCompleted, setIsCompleted] = useState(false);

@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { ChevronLeft, Flag, Download, AlertCircle, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 import { use } from 'react';
 
-export default function CTFChallengePage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
+export default function CTFChallengePage({ params }: { params: any }) {
+  const resolvedParams: { id: string } =
+    params && typeof (params as any)?.then === 'function' ? use(params as any) : (params || {});
   const [flag, setFlag] = useState('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [showHint, setShowHint] = useState(false);

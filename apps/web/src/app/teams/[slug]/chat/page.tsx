@@ -19,9 +19,10 @@ interface ChatMessage {
   isSelf?: boolean;
 }
 
-export default function TeamChatPage({ params }: { params: Promise<{ slug: string }> }) {
-  const resolvedParams = use(params);
-  const slug = resolvedParams.slug;
+export default function TeamChatPage({ params }: { params: any }) {
+  const resolvedParams: { slug: string } =
+    params && typeof (params as any)?.then === 'function' ? use(params as any) : (params || {});
+  const slug = resolvedParams?.slug || '';
 
   const [activeChannel, setActiveChannel] = useState('umumiy-strategiya');
   const [inputText, setInputText] = useState('');

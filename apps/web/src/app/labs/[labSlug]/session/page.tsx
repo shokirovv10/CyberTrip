@@ -28,9 +28,10 @@ interface Hint {
   unlocked: boolean;
 }
 
-export default function LabSessionPage({ params }: { params: Promise<{ labSlug: string }> }) {
-  const resolvedParams = use(params);
-  const slug = resolvedParams.labSlug;
+export default function LabSessionPage({ params }: { params: any }) {
+  const resolvedParams: { labSlug: string } =
+    params && typeof (params as any)?.then === 'function' ? use(params as any) : (params || {});
+  const slug = resolvedParams?.labSlug || '';
 
   const [activeTab, setActiveTab] = useState<'app' | 'terminal' | 'briefing' | 'review'>('app');
   const [timeLeft, setTimeLeft] = useState(45 * 60);

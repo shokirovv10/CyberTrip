@@ -31,9 +31,10 @@ interface TeamTask {
   isDone: boolean;
 }
 
-export default function TeamDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const resolvedParams = use(params);
-  const slug = resolvedParams.slug;
+export default function TeamDetailPage({ params }: { params: any }) {
+  const resolvedParams: { slug: string } =
+    params && typeof (params as any)?.then === 'function' ? use(params as any) : (params || {});
+  const slug = resolvedParams?.slug || '';
 
   const [activeTab, setActiveTab] = useState<'roster' | 'workspace' | 'stats' | 'settings'>('workspace');
   const [copied, setCopied] = useState(false);
