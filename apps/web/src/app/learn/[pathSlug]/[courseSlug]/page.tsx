@@ -1,127 +1,122 @@
 'use client';
-import { useState } from 'react';
-import Link from 'next/link';
-import { ChevronRight, PlayCircle, CheckCircle2, Lock, Terminal } from 'lucide-react';
-import { use } from 'react';
 
-export default function CourseDetailPage({ params }: { params: Promise<{ pathSlug: string, courseSlug: string }> }) {
+import { useState, use } from 'react';
+import Link from 'next/link';
+import { 
+  ChevronRight, PlayCircle, CheckCircle2, Lock, Terminal, 
+  ArrowLeft, Clock, BookOpen, Award, ArrowRight, Shield 
+} from 'lucide-react';
+import { CURRICULUM_DATA } from '@/lib/curriculum-data';
+
+export default function CourseDetailPage({ params }: { params: Promise<{ pathSlug: string; courseSlug: string }> }) {
   const resolvedParams = use(params);
-  const [openModule, setOpenModule] = useState<number | null>(1);
+  const path = CURRICULUM_DATA[resolvedParams.pathSlug] || CURRICULUM_DATA['web-pentest'];
+  const course = path.courses.find((c) => c.slug === resolvedParams.courseSlug) || path.courses[0];
+
+  const [openModuleIndex, setOpenModuleIndex] = useState<number>(0);
 
   return (
-    <div className="min-h-screen bg-[#0B0F14] text-gray-100 p-6">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="min-h-screen bg-[#070A0E] text-gray-100 py-10 px-4 font-sans">
+      <div className="max-w-6xl mx-auto space-y-8">
         
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-8">
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3 text-sm text-gray-400">
-              <Link href="/learn" className="hover:text-emerald-500">O'quv yo'llari</Link>
-              <ChevronRight className="w-4 h-4" />
-              <Link href={`/learn/${resolvedParams.pathSlug}`} className="hover:text-emerald-500 capitalize">{resolvedParams.pathSlug.replace('-', ' ')}</Link>
-              <ChevronRight className="w-4 h-4" />
+        {/* Breadcrumb */}
+        <div className="flex items-center space-x-2 text-xs text-gray-400">
+          <Link href="/learn" className="hover:text-cyan-400 transition-colors">O'rganish</Link>
+          <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
+          <Link href={`/learn/${path.slug}`} className="hover:text-cyan-400 transition-colors">{path.title}</Link>
+          <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
+          <span className="text-gray-200 font-semibold">{course.title}</span>
+        </div>
+
+        {/* Course Banner */}
+        <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-8 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+            <div className="space-y-3">
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-cyan-500/30 text-cyan-400 bg-cyan-500/10">
+                {course.level}
+              </span>
+              <h1 className="text-2xl md:text-3xl font-black text-white">{course.title}</h1>
+              <p className="text-xs text-gray-400 max-w-2xl leading-relaxed">{course.description}</p>
+              
+              <div className="flex flex-wrap items-center gap-4 pt-2 text-xs text-gray-400">
+                <span className="flex items-center">
+                  <Clock className="w-3.5 h-3.5 mr-1 text-cyan-400" /> {course.hours} soat
+                </span>
+                <span className="flex items-center">
+                  <BookOpen className="w-3.5 h-3.5 mr-1 text-cyan-400" /> {course.modules.length} ta modul
+                </span>
+                <span className="flex items-center">
+                  <Award className="w-3.5 h-3.5 mr-1 text-emerald-400" /> Sertifikat kiritilgan
+                </span>
+              </div>
             </div>
-            <h1 className="text-3xl font-bold capitalize">{resolvedParams.courseSlug.replace('-', ' ')}</h1>
-            <p className="text-gray-400 text-lg">
-              Tarmoq protokollari, zaifliklar va ularni himoya qilish usullari haqida chuqur bilimga ega bo'ling.
-            </p>
+
+            {course.modules[0]?.lessons[0] && (
+              <Link href={`/learn/${path.slug}/${course.slug}/${course.modules[0].slug}/${course.modules[0].lessons[0].slug}`}>
+                <button className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-extrabold text-xs rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center space-x-2 whitespace-nowrap">
+                  <span>Birinchi Darsni Boshlash</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </Link>
+            )}
           </div>
+        </div>
+
+        {/* Modules & Lessons Accordion */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-white">Kurs Mundarijasi & Darslar</h2>
 
           <div className="space-y-4">
-            <h2 className="text-2xl font-semibold">Kurs dasturi</h2>
-            <div className="space-y-4">
-              {[1, 2, 3].map((mod) => (
-                <div key={mod} className="bg-gray-900 border border-gray-800/50 rounded-xl overflow-hidden">
-                  <button 
-                    onClick={() => setOpenModule(openModule === mod ? null : mod)}
-                    className="w-full px-6 py-4 flex items-center justify-between bg-gray-900 hover:bg-gray-800 transition-colors"
+            {course.modules.map((mod, modIdx) => {
+              const isOpen = openModuleIndex === modIdx;
+              return (
+                <div key={mod.slug} className="bg-[#0B0F17] border border-gray-800 rounded-2xl overflow-hidden shadow-lg">
+                  <button
+                    onClick={() => setOpenModuleIndex(isOpen ? -1 : modIdx)}
+                    className="w-full p-5 flex items-center justify-between text-left hover:bg-gray-900/60 transition-colors"
                   >
-                    <div className="flex items-center space-x-4">
-                      <span className="text-gray-500 font-mono">MOD {mod}</span>
-                      <span className="font-semibold text-left">
-                        {mod === 1 ? 'Tarmoq asoslari' : mod === 2 ? 'Keng tarqalgan hujumlar' : 'Himoya mexanizmlari'}
-                      </span>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">{mod.title}</h3>
+                      <p className="text-xs text-gray-400 mt-1">{mod.description}</p>
                     </div>
-                    <ChevronRight className={`w-5 h-5 text-gray-400 transition-transform ${openModule === mod ? 'rotate-90' : ''}`} />
+                    <ChevronRight className={`w-4 h-4 text-cyan-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                   </button>
-                  
-                  {openModule === mod && (
-                    <div className="border-t border-gray-800/50">
-                      {[1, 2, 3].map((lesson) => (
-                        <Link 
-                          key={lesson}
-                          href={`/learn/${resolvedParams.pathSlug}/${resolvedParams.courseSlug}/module-${mod}/lesson-${lesson}`}
-                          className="flex items-center justify-between px-6 py-3 hover:bg-gray-800/50 transition-colors border-l-2 border-transparent hover:border-emerald-500"
+
+                  {isOpen && (
+                    <div className="border-t border-gray-800/80 divide-y divide-gray-800/60 bg-gray-950/40">
+                      {mod.lessons.map((lesson, lIdx) => (
+                        <Link
+                          key={lesson.slug}
+                          href={`/learn/${path.slug}/${course.slug}/${mod.slug}/${lesson.slug}`}
+                          className="flex items-center justify-between p-4 hover:bg-gray-900/50 transition-colors group"
                         >
                           <div className="flex items-center space-x-3">
-                            {mod === 1 && lesson === 1 ? (
-                              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                            ) : mod === 1 && lesson === 2 ? (
-                              <PlayCircle className="w-5 h-5 text-blue-500" />
-                            ) : (
-                              <Lock className="w-5 h-5 text-gray-600" />
-                            )}
-                            <span className={mod === 1 && lesson === 1 ? "text-gray-400 line-through" : "text-gray-200"}>
-                              Dars {lesson}: {mod === 1 ? "OSI modeli" : "TCP/IP arxitekturasi"}
+                            <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs group-hover:scale-105 transition-transform">
+                              <PlayCircle className="w-3.5 h-3.5" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-semibold text-gray-200 group-hover:text-cyan-300 transition-colors">
+                                {lesson.title}
+                              </h4>
+                              <p className="text-[11px] text-gray-500 line-clamp-1">{lesson.summary}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-3 text-xs font-mono">
+                            <span className="text-gray-500">{lesson.duration}</span>
+                            <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                              +{lesson.xp} XP
                             </span>
                           </div>
-                          <span className="text-xs text-gray-500">10 daq</span>
                         </Link>
                       ))}
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          <div className="bg-gray-900 border border-gray-800/50 rounded-xl p-6 space-y-6 sticky top-6">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm text-gray-400">
-                <span>Jarayon</span>
-                <span className="text-emerald-500 font-medium">33%</span>
-              </div>
-              <div className="w-full bg-gray-800 rounded-full h-2">
-                <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '33%' }}></div>
-              </div>
-            </div>
-            
-            <div className="space-y-4 text-sm text-gray-400">
-              <div className="flex justify-between">
-                <span>Modullar:</span>
-                <span className="text-gray-200">3 ta</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Darslar:</span>
-                <span className="text-gray-200">9 ta</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Davomiyligi:</span>
-                <span className="text-gray-200">2.5 soat</span>
-              </div>
-            </div>
-
-            <Link href={`/learn/${resolvedParams.pathSlug}/${resolvedParams.courseSlug}/module-1/lesson-2`} className="block w-full">
-              <button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-lg font-medium transition-colors">
-                Davom etish
-              </button>
-            </Link>
-          </div>
-
-          <div className="bg-gray-900 border border-gray-800/50 rounded-xl p-6">
-            <h3 className="font-semibold mb-4 flex items-center">
-              <Terminal className="w-5 h-5 mr-2 text-blue-500" />
-              Tegishli Laboratoriyalar
-            </h3>
-            <div className="space-y-3">
-              <Link href="/labs/nmap-basics" className="block p-3 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors">
-                <div className="text-sm font-medium text-gray-200">Nmap Asoslari</div>
-                <div className="text-xs text-gray-400 mt-1">Tarmoqni skanerlash amaliyoti</div>
-              </Link>
-            </div>
+              );
+            })}
           </div>
         </div>
 
