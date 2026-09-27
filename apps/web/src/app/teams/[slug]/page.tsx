@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { 
   Shield, Users, MessageSquare, Copy, Check, Crown, Award, 
   Settings, LogOut, UserPlus, ArrowLeft, Trophy, Flag, Terminal, 
-  Sparkles, ExternalLink, RefreshCw 
+  Sparkles, ExternalLink, RefreshCw, CheckSquare, Square, 
+  FileEdit, Save, Plus, ArrowRight, Layers
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,11 +22,20 @@ interface Member {
   joinedAt: string;
 }
 
+interface TeamTask {
+  id: string;
+  title: string;
+  targetApp: string;
+  assignedTo: string;
+  difficulty: string;
+  isDone: boolean;
+}
+
 export default function TeamDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
   const slug = resolvedParams.slug;
 
-  const [activeTab, setActiveTab] = useState<'roster' | 'stats' | 'settings'>('roster');
+  const [activeTab, setActiveTab] = useState<'roster' | 'workspace' | 'stats' | 'settings'>('workspace');
   const [copied, setCopied] = useState(false);
   const [isMember, setIsMember] = useState(true);
   const [userRole, setUserRole] = useState<'OWNER' | 'ADMIN' | 'MEMBER'>('OWNER');
@@ -50,6 +60,47 @@ export default function TeamDetailPage({ params }: { params: Promise<{ slug: str
     { id: '3', name: 'Dilnoza Karimova', username: 'dilnoza_pwn', role: 'MEMBER', xp: 2300, solves: 16, avatarColor: 'from-purple-500 to-pink-600', joinedAt: '2024-04-02' },
     { id: '4', name: 'Sardorbek Rahimov', username: 'sardor_bin', role: 'MEMBER', xp: 1400, solves: 9, avatarColor: 'from-amber-500 to-orange-600', joinedAt: '2024-05-10' },
   ]);
+
+  // Collaborative Tasks State
+  const [tasks, setTasks] = useState<TeamTask[]>([
+    { id: 't1', title: 'CyberBooks ma\'lumotlar bazasi eksfiltratsiyasi', targetApp: 'cyberbooks', assignedTo: 'alisher_sec', difficulty: 'BEGINNER', isDone: true },
+    { id: 't2', title: 'API Gateway token algoritmi soxtalashtirish', targetApp: 'api-gateway', assignedTo: 'bobur_red', difficulty: 'ADVANCED', isDone: false },
+    { id: 't3', title: 'DiagnosticPanel OS Command Injection RCE', targetApp: 'diagnostic-panel', assignedTo: 'dilnoza_pwn', difficulty: 'INTERMEDIATE', isDone: false },
+    { id: 't4', title: 'SecureDocs IDOR orqali maxfiy hujjatlarni ko\'rish', targetApp: 'securedocs', assignedTo: 'sardor_bin', difficulty: 'BEGINNER', isDone: false },
+  ]);
+
+  // Shared Notes with localStorage persistence
+  const [sharedNotes, setSharedNotes] = useState(
+    `# Jamoa Eksploit va Razvedka Qaydlari
+## 1. Topilgan ichki endpointlar:
+- /api/v1/debug/metrics (Basic Auth talab qiladi)
+- /uploads/shell.php.png (Content-Type tekshirilmayapti)
+
+## 2. Ishlatilgan foydali payloadlar:
+- SQLi: ' UNION SELECT 1, table_name, 3 FROM information_schema.tables-- -
+- Command Injection: ; ping -c 4 10.10.14.88 #
+`
+  );
+  const [notesSaved, setNotesSaved] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(`cybertrip_team_notes_${slug}`);
+    if (saved) {
+      setSharedNotes(saved);
+    }
+  }, [slug]);
+
+  const saveNotes = () => {
+    localStorage.setItem(`cybertrip_team_notes_${slug}`, sharedNotes);
+    setNotesSaved(true);
+    setTimeout(() => setNotesSaved(false), 2000);
+  };
+
+  const toggleTask = (taskId: string) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, isDone: !t.isDone } : t))
+    );
+  };
 
   const copyInviteCode = () => {
     navigator.clipboard.writeText(team.inviteCode);
@@ -93,7 +144,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ slug: str
         </Link>
 
         {/* Team Header Banner */}
-        <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 md:p-8 relative overflow-hidden shadow-2xl">
+        <div className="bg-[#0B0F17] border border-gray-800 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl">
           <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
@@ -158,14 +209,27 @@ export default function TeamDetailPage({ params }: { params: Promise<{ slug: str
               <span className="text-xl font-bold text-white">{members.length} / 5 kishi</span>
             </div>
             <div>
-              <span className="text-[11px] text-gray-500 uppercase tracking-wider block">Tashkil topgan</span>
-              <span className="text-xl font-bold text-gray-400">{team.createdAt}</span>
+              <span className="text-[11px] text-gray-500 uppercase tracking-wider block">Vazifalar Holati</span>
+              <span className="text-xl font-bold text-emerald-400">
+                {tasks.filter((t) => t.isDone).length} / {tasks.length} yechildi
+              </span>
             </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-gray-800">
+        <div className="flex border-b border-gray-800 space-x-2">
+          <button
+            onClick={() => setActiveTab('workspace')}
+            className={`pb-3 px-4 text-xs font-bold border-b-2 flex items-center space-x-2 transition-colors ${
+              activeTab === 'workspace'
+                ? 'border-cyan-400 text-cyan-400'
+                : 'border-transparent text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Hamkorlik Poligoni & Qaydlar</span>
+          </button>
           <button
             onClick={() => setActiveTab('roster')}
             className={`pb-3 px-4 text-xs font-bold border-b-2 flex items-center space-x-2 transition-colors ${
@@ -203,7 +267,102 @@ export default function TeamDetailPage({ params }: { params: Promise<{ slug: str
           )}
         </div>
 
-        {/* Tab 1: Roster */}
+        {/* TAB 1: WORKSPACE & COLLABORATIVE TASKS */}
+        {activeTab === 'workspace' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left: Tasks Roster */}
+            <div className="lg:col-span-6 space-y-6">
+              <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center">
+                      <CheckSquare className="w-4 h-4 text-cyan-400 mr-2" /> Topshiriqlar Taxtasi
+                    </h3>
+                    <p className="text-[11px] text-gray-400">Jamoa a'zolariga biriktirilgan zaif ilovalar va laboratoriyalar</p>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-400 font-mono">
+                    {Math.round((tasks.filter((t) => t.isDone).length / tasks.length) * 100)}% tayyor
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      onClick={() => toggleTask(task.id)}
+                      className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-start justify-between ${
+                        task.isDone
+                          ? 'bg-emerald-950/20 border-emerald-500/30 text-gray-400 line-through'
+                          : 'bg-gray-900/60 border-gray-800 hover:border-cyan-500/50 text-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="mt-0.5">
+                          {task.isDone ? (
+                            <CheckSquare className="w-4 h-4 text-emerald-400" />
+                          ) : (
+                            <Square className="w-4 h-4 text-gray-500" />
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <span className={`text-xs font-semibold block ${task.isDone ? 'line-through text-gray-500' : 'text-white'}`}>
+                            {task.title}
+                          </span>
+                          <div className="flex items-center space-x-2 text-[10px] text-gray-400 font-mono">
+                            <span className="text-cyan-400">Target: {task.targetApp}</span>
+                            <span>•</span>
+                            <span>Mas'ul: @{task.assignedTo}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <span className="text-[10px] font-mono uppercase bg-gray-950 px-2 py-0.5 rounded border border-gray-800 text-gray-400 shrink-0">
+                        {task.difficulty}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Collaborative Shared Notes */}
+            <div className="lg:col-span-6 space-y-6">
+              <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center">
+                      <FileEdit className="w-4 h-4 text-cyan-400 mr-2" /> Birgalikdagi Razvedka Qaydlari
+                    </h3>
+                    <p className="text-[11px] text-gray-400">Jamoa uchun umumiy payloadlar, tokenlar va audit yozuvlari</p>
+                  </div>
+                  <Button
+                    onClick={saveNotes}
+                    className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs py-1.5 px-3 rounded-lg shadow-sm"
+                  >
+                    <Save className="w-3.5 h-3.5 mr-1" />
+                    <span>{notesSaved ? 'Saqlandi!' : 'Saqlash'}</span>
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <textarea
+                    value={sharedNotes}
+                    onChange={(e) => setSharedNotes(e.target.value)}
+                    rows={12}
+                    className="w-full bg-gray-950 border border-gray-800 rounded-xl p-3.5 text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-500 leading-relaxed resize-none"
+                    placeholder="Jamoa bilan birgalikdagi kiber-qaydlarni bu yerda yozing..."
+                  />
+                  <div className="flex items-center justify-between text-[10px] text-gray-500 font-mono">
+                    <span>Avtomatik kesh: Brauzer lokal xotirasi</span>
+                    <span>Markdown qo'llab-quvvatlanadi</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: ROSTER */}
         {activeTab === 'roster' && (
           <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl overflow-hidden shadow-xl">
             <div className="p-4 bg-gray-900/60 border-b border-gray-800 flex items-center justify-between">
@@ -255,10 +414,10 @@ export default function TeamDetailPage({ params }: { params: Promise<{ slug: str
           </div>
         )}
 
-        {/* Tab 2: Stats & Achievements */}
+        {/* TAB 3: STATS & ACHIEVEMENTS */}
         {activeTab === 'stats' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-4">
+            <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-4 shadow-xl">
               <h3 className="text-sm font-bold text-white flex items-center">
                 <Flag className="w-4 h-4 text-cyan-400 mr-2" /> So'nggi CTF Natijalari
               </h3>
@@ -282,7 +441,7 @@ export default function TeamDetailPage({ params }: { params: Promise<{ slug: str
               </div>
             </div>
 
-            <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-4">
+            <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-4 shadow-xl">
               <h3 className="text-sm font-bold text-white flex items-center">
                 <Award className="w-4 h-4 text-amber-400 mr-2" /> Jamoa Nishonlari
               </h3>
@@ -303,9 +462,9 @@ export default function TeamDetailPage({ params }: { params: Promise<{ slug: str
           </div>
         )}
 
-        {/* Tab 3: Settings */}
+        {/* TAB 4: SETTINGS */}
         {activeTab === 'settings' && userRole === 'OWNER' && (
-          <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-6">
+          <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-6 shadow-xl">
             <div>
               <h3 className="text-sm font-bold text-white">Jamoa Sozlamalari</h3>
               <p className="text-xs text-gray-400">Jamoa ma'lumotlarini boshqarish va taklif kodini yangilash</p>

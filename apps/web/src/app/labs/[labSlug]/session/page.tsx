@@ -32,7 +32,7 @@ export default function LabSessionPage({ params }: { params: Promise<{ labSlug: 
   const resolvedParams = use(params);
   const slug = resolvedParams.labSlug;
 
-  const [activeTab, setActiveTab] = useState<'app' | 'terminal' | 'briefing'>('app');
+  const [activeTab, setActiveTab] = useState<'app' | 'terminal' | 'briefing' | 'review'>('app');
   const [timeLeft, setTimeLeft] = useState(45 * 60);
   const [isPaused, setIsPaused] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
@@ -42,6 +42,11 @@ export default function LabSessionPage({ params }: { params: Promise<{ labSlug: 
   const [showHintModal, setShowHintModal] = useState(false);
   const [confirmUnlockHint, setConfirmUnlockHint] = useState<Hint | null>(null);
   const [selectedRoute, setSelectedRoute] = useState('/');
+
+  // Personal notes & resume lab state
+  const [userNotes, setUserNotes] = useState('');
+  const [showNotes, setShowNotes] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   // Terminal state
   const [termHistory, setTermHistory] = useState<Array<{ cmd: string; out: string; isErr?: boolean }>>([
@@ -277,7 +282,7 @@ export default function LabSessionPage({ params }: { params: Promise<{ labSlug: 
                 : 'text-gray-400 hover:text-gray-200'
             }`}
           >
-            <Globe className="w-3.5 h-3.5 mr-1.5" /> Target Veb-Ilova
+            <Globe className="w-3.5 h-3.5 mr-1.5" /> Target Ilova
           </button>
           <button
             onClick={() => setActiveTab('terminal')}
@@ -287,7 +292,7 @@ export default function LabSessionPage({ params }: { params: Promise<{ labSlug: 
                 : 'text-gray-400 hover:text-gray-200'
             }`}
           >
-            <Terminal className="w-3.5 h-3.5 mr-1.5" /> Hujumchi Terminali
+            <Terminal className="w-3.5 h-3.5 mr-1.5" /> Terminal
           </button>
           <button
             onClick={() => setActiveTab('briefing')}
@@ -297,12 +302,30 @@ export default function LabSessionPage({ params }: { params: Promise<{ labSlug: 
                 : 'text-gray-400 hover:text-gray-200'
             }`}
           >
-            <BookOpen className="w-3.5 h-3.5 mr-1.5" /> Ko'rsatmalar
+            <BookOpen className="w-3.5 h-3.5 mr-1.5" /> Brifing
+          </button>
+          <button
+            onClick={() => setActiveTab('review')}
+            className={`flex items-center text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
+              activeTab === 'review'
+                ? 'bg-cyan-500 text-black font-semibold shadow-sm'
+                : 'text-gray-400 hover:text-cyan-400'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 mr-1.5" /> After Lab Review
           </button>
         </div>
 
         {/* Right Timer & Status Controls */}
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowNotes(!showNotes)}
+            title="Shaxsiy eslatmalar (Notes)"
+            className={`p-1.5 border rounded-lg transition-colors ${showNotes ? 'bg-cyan-500/20 border-cyan-500 text-cyan-300' : 'bg-gray-900 border-gray-800 text-gray-400 hover:text-white'}`}
+          >
+            <Code2 className="w-3.5 h-3.5" />
+          </button>
+
           <button
             onClick={() => setShowHintModal(true)}
             className="flex items-center space-x-1.5 text-xs font-bold px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded-lg hover:bg-amber-500/20 transition-colors"
@@ -484,7 +507,85 @@ export default function LabSessionPage({ params }: { params: Promise<{ labSlug: 
               </div>
             </div>
           )}
+
+          {/* After Lab Review Tab */}
+          {activeTab === 'review' && (
+            <div className="flex-1 bg-[#090D14] p-8 overflow-y-auto space-y-6">
+              <div className="max-w-3xl mx-auto space-y-6">
+                <div className="border-b border-gray-800 pb-4">
+                  <span className="text-xs font-bold text-cyan-400 tracking-wider uppercase">Amaliy Tahlil & Xulosa</span>
+                  <h1 className="text-2xl font-black text-white mt-1">After Lab Review: {labConfig.title}</h1>
+                  <p className="text-gray-400 text-xs mt-1">Laboratoriyada yuz bergan jarayonlar, manba kodi zaifligi va himoyalanish metodikasi.</p>
+                </div>
+
+                {/* 1. What happened? */}
+                <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-2">
+                  <h3 className="text-sm font-bold text-cyan-400">1. Nima sodir bo'ldi? (What happened?)</h3>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Kirish nuqtasida foydalanuvchi tomonidan yuborilgan parametrlar server tomonidan to'g'ri tekshirilmasdan va filtrlanmasdan qabul qilinganligi sababli tizim xavfsizlik chegaralari chetlab o'tildi.
+                  </p>
+                </div>
+
+                {/* 2. Why did it happen? */}
+                <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-2">
+                  <h3 className="text-sm font-bold text-amber-400">2. Nega bu yuz berdi? (Why did it happen?)</h3>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Ishlab chiquvchi kiruvchi kiritmalarni xavfsiz sanitizatsiya qilish yoki parametrlashtirilgan interfeyslardan (Prepared Statements, Context-aware escaping) foydalanish o'rniga, to'g'ridan-to'g'ri birlashtirgan.
+                  </p>
+                </div>
+
+                {/* 3. What was vulnerable? */}
+                <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-2">
+                  <h3 className="text-sm font-bold text-rose-400">3. Qaysi parametr zaif edi? (What was vulnerable?)</h3>
+                  <p className="text-xs text-gray-300 leading-relaxed font-mono">
+                    Kirish nuqtasi: <strong className="text-white">{labConfig.availableRoutes[0] || '/'}</strong><br />
+                    Zaiflik toifasi: <strong className="text-cyan-400">{labConfig.category}</strong> (CWE-89 / CWE-79 / CWE-639)
+                  </p>
+                </div>
+
+                {/* 4. How should it be fixed? */}
+                <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-3">
+                  <h3 className="text-sm font-bold text-emerald-400">4. Uni qanday tuzatish kerak? (How should it be fixed?)</h3>
+                  <div className="bg-black/80 border border-gray-800 rounded-xl p-4 font-mono text-xs text-emerald-300">
+                    // Xavfsiz Kod Namunasi (Backend Remediation)<br />
+                    db.query('SELECT * FROM accounts WHERE id = ? AND tenant_id = ?', [userId, tenantId]);
+                  </div>
+                </div>
+
+                {/* 5. What should a defender look for? */}
+                <div className="bg-[#0B0F17] border border-gray-800 rounded-2xl p-6 space-y-2">
+                  <h3 className="text-sm font-bold text-purple-400">5. Himoyachi (SOC / Blue Team) nimani qidirishi kerak? (Defender log signature)</h3>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    WAF va Web Access loglarida shubhali belgilarga ega so'rovlar, qisqa vaqt oralig'ida qaytarilgan 500 va 403 status kodlari anomaliyalari monitoring qilinishi kerak.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* ── Personal Notes Drawer ── */}
+        {showNotes && (
+          <div className="fixed bottom-4 right-4 z-40 w-96 bg-[#0B0F17] border border-cyan-500/40 rounded-2xl shadow-2xl p-4 space-y-3 animate-in slide-in-from-bottom-5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-cyan-400 flex items-center">
+                <Code2 className="w-3.5 h-3.5 mr-1" /> Shaxsiy Pentest Eslatmalari
+              </span>
+              <button onClick={() => setShowNotes(false)} className="text-gray-400 hover:text-white">✕</button>
+            </div>
+            <textarea
+              rows={5}
+              value={userNotes}
+              onChange={(e) => setUserNotes(e.target.value)}
+              placeholder="Topilgan parametrlar, sinov payloadlari va eslatmalarni bu yerga yozing (avtomatik saqlanadi)..."
+              className="w-full bg-[#070A0E] border border-gray-800 rounded-xl p-3 text-xs font-mono text-gray-200 focus:outline-none focus:border-cyan-500 resize-none leading-relaxed"
+            />
+            <div className="flex justify-between items-center text-[10px] text-gray-500">
+              <span>Holat: Avtomatik saqlandi</span>
+              <span className="text-emerald-400">✓ LocalStorage</span>
+            </div>
+          </div>
+        )}
 
         {/* Right: Objectives & Verification Sidebar (28%) */}
         <aside className="w-full lg:w-96 bg-[#0B0F15] flex flex-col flex-shrink-0 border-t lg:border-t-0 overflow-y-auto">
