@@ -3,16 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --background: #0B0F14;
-  --surface-card: #111827;
-  --surface-elevated: #1F2937;
-  --surface-highlight: #374151;
+  --background: #070A0E;
+  --surface-card: #0B0F17;
+  --surface-elevated: #111827;
+  --surface-highlight: #1F2937;
   --foreground-primary: #F9FAFB;
   --foreground-secondary: #9CA3AF;
   --foreground-muted: #6B7280;
   --border-subtle: #1F2937;
   --accent-green: #10B981;
   --accent-blue: #3B82F6;
+  --accent-cyan: #06B6D4;
   --accent-purple: #8B5CF6;
   --accent-yellow: #F59E0B;
   --accent-red: #EF4444;
@@ -20,26 +21,31 @@
 
 @layer base {
   body {
-    @apply bg-base text-primary antialiased;
+    background-color: #070A0E;
+    color: #F9FAFB;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
     color-scheme: dark;
   }
 
-  /* High contrast text guarantees - no black text on dark surfaces */
   h1, h2, h3, h4, h5, h6 {
-    @apply text-primary font-bold tracking-tight;
+    color: #F9FAFB;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
   p {
-    @apply text-secondary leading-relaxed;
+    color: #9CA3AF;
+    line-height: 1.6;
   }
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background-color: #0B0F14;
+  background-color: #070A0E;
 }
 ::-webkit-scrollbar-thumb {
   background-color: #1F2937;
@@ -47,4 +53,62 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background-color: #374151;
+}
+
+/* GPU-accelerated Cyber Animations */
+@keyframes cyber-scan {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(300px);
+    opacity: 0;
+  }
+}
+
+@keyframes cyber-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-scan-line {
+  animation: cyber-scan 3.5s linear infinite;
+  will-change: transform, opacity;
+}
+
+.animate-cyber-pulse {
+  animation: cyber-pulse 2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.animate-float {
+  animation: float-gentle 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Lightweight cyber background grid */
+.cyber-grid-bg {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
 }

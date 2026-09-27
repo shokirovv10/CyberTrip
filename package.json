@@ -11,6 +11,8 @@
     "dev": "turbo dev",
     "dev:web": "npm --workspace=@cybertrip/web run dev",
     "dev:api": "npm --workspace=@cybertrip/api run start:dev",
+    "start:web": "npm --workspace=@cybertrip/web run start",
+    "start:api": "npm --workspace=@cybertrip/api run start:prod",
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test",
