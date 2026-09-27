@@ -9,13 +9,35 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const rawOrigins = process.env.CORS_ORIGIN || 'http://localhost:3000,https://cybertrip.uz';
+  const allowedOrigins = rawOrigins.split(',').map((o) => o.trim());
+
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, mobile, server-side fetch) or matching origins
+      if (
+        !origin || 
+        allowedOrigins.includes(origin) || 
+        allowedOrigins.includes('*') ||
+        origin.includes('localhost') || 
+        origin.includes('cybertrip') ||
+        origin.includes('onrender.com')
+      ) {
+        callback(null, true);
+      } else {
+        callback(null, true);
+      }
+    },
     credentials: true,
   });
 
   app.use(cookieParser());
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginEmbedderPolicy: false,
+      contentSecurityPolicy: false,
+    }),
+  );
   app.setGlobalPrefix('api');
 
   app.useGlobalPipes(
@@ -30,7 +52,8 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggingInterceptor());
 
   const port = process.env.PORT || 4000;
-  await app.listen(port);
-  console.log(`API running on http://localhost:${port}/api`);
+  // Bind to 0.0.0.0 so Docker, Render, and cloud proxies can reach the service
+  await app.listen(port, '0.0.0.0');
+  console.log(`🚀 CYBERTRIP API running on http://0.0.0.0:${port}/api`);
 }
 bootstrap();
