@@ -476,5 +476,197 @@ export const CURRICULUM_DATA: Record<string, PathData> = {
         ]
       }
     ]
+  },
+  'cryptography': {
+    slug: 'cryptography',
+    title: 'Kriptografiya Asoslari',
+    subtitle: 'Simmetrik va asimmetrik shifrlash, xeshlar va raqamli imzolar',
+    description: 'Zamonaviy internet va ma\'lumotlar xavfsizligining poydevori. AES, RSA, SHA-256 va Eliptik egri chiziqlar (ECC) matematikasi va amaliyoti.',
+    level: 'INTERMEDIATE',
+    hours: 30,
+    coursesCount: 2,
+    badgeColor: 'border-purple-500/30 text-purple-400 bg-purple-500/10',
+    iconName: 'Lock',
+    skills: ['AES-256 GCM', 'RSA Public Key', 'HMAC & SHA-256', 'Diffie-Hellman', 'Digital Signatures'],
+    courses: [
+      {
+        slug: 'symmetric-asymmetric-crypto',
+        title: 'Simmetrik va Asimmetrik Shifrlash',
+        description: 'Blokli shifrlash usullari (AES, DES) va ochiq kalitli kriptografiya (RSA, ECC).',
+        level: 'INTERMEDIATE',
+        hours: 15,
+        prerequisites: ['Umumiy dasturlash asoslari'],
+        modules: [
+          {
+            slug: 'encryption-ciphers',
+            title: '1-Modul: Shifrlash Algoritmlari va Kalitlar',
+            description: 'AES blok rejimlari (CBC vs GCM) va padding oracle zaifliklari.',
+            lessons: [
+              {
+                slug: 'aes-encryption-modes',
+                title: '1.1. AES Shifrlash Rejimlari va IV (Initialization Vector)',
+                duration: '30 daqiqa',
+                xp: 75,
+                summary: 'Nima uchun ECB rejimidan foydalanish xavfli va CBC/GCM qanday ishlaydi.',
+                content: {
+                  overview: 'AES (Advanced Encryption Standard) — jahondagi eng ishonchli simmetrik shifrlash standarti bo\'lib, u 128, 192 va 256-bitli kalitlar bilan ishlaydi.',
+                  keyConcepts: [
+                    { term: 'ECB (Electronic Codebook)', definition: 'Har bir blok alohida shifrlanadi. Naqshlar yashirilmaydi va grafik tasvirlarda ma\'lumot fosh bo\'lib qoladi.' },
+                    { term: 'CBC (Cipher Block Chaining)', definition: 'Har bir blok oldingi shifrlangan blok bilan XOR qilinadi. Boshlang\'ich vektor (IV) talab qilinadi.' },
+                    { term: 'GCM (Galois/Counter Mode)', definition: 'Shifrlash bilan birga ma\'lumotlar yaxlitligini ham kafolatlovchi (Authenticated Encryption) eng zamonaviy rejim.' }
+                  ],
+                  codeExample: {
+                    language: 'typescript',
+                    title: 'Node.js Crypto orqali AES-256-GCM Shifrlash',
+                    code: `import crypto from 'crypto';\n\nconst key = crypto.randomBytes(32);\nconst iv = crypto.randomBytes(12);\nconst cipher = crypto.createCipheriv('aes-256-gcm', key, iv);\n\nlet encrypted = cipher.update('Maxfiy ma\\'lumot', 'utf8', 'hex');\nencrypted += cipher.final('hex');\nconst authTag = cipher.getAuthTag().toString('hex');`,
+                    explanation: 'AES-GCM rejimi soxtalashtirish (tampering) urinishlarini darhol authTag orqali aniqlaydi.'
+                  },
+                  attackScenario: {
+                    title: 'Padding Oracle Hujumi',
+                    steps: [
+                      'Zaif CBC rejimida noto\'g\'ri to\'ldirish (padding) bo\'lganda server alohida xatolik qaytaradi.',
+                      'Hujumchi baytma-bayt sinov orqali shifrlangan matnni kalitsiz ochib oladi.'
+                    ],
+                    samplePayload: 'PadBuster http://target.lab/auth?token=... 16'
+                  },
+                  defenseRecommendations: [
+                    'Doimo AES-GCM yoki ChaCha20-Poly1305 kabi AEAD (Authenticated Encryption) rejimlaridan foydalaning.',
+                    'Har bir shifrlash amali uchun yangi va takrorlanmas IV generatsiya qiling.'
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  'soc-blue-team': {
+    slug: 'soc-blue-team',
+    title: 'SOC va Blue Team Mudofaasi',
+    subtitle: 'Xavfsizlik monitoring markazi, loglar auditi va insidentlarni boshqarish',
+    description: 'Korxona infratuzilmasiga qilingan kiber-hujumlarni real vaqtda aniqlash, SIEM tizimlari orqali loglarni filtrlash va MITRE ATT&CK asosida mudofaa chora-tadbirlari.',
+    level: 'ADVANCED',
+    hours: 45,
+    coursesCount: 2,
+    badgeColor: 'border-blue-500/30 text-blue-400 bg-blue-500/10',
+    iconName: 'Shield',
+    skills: ['SIEM (Wazuh / Splunk)', 'Log Analysis', 'Incident Response', 'MITRE ATT&CK', 'EDR Detection'],
+    courses: [
+      {
+        slug: 'siem-incident-monitoring',
+        title: 'SIEM Tizimlari & Xavfsizlik Monitoringi',
+        description: 'Wazuh, ELK va Splunk yordamida korporativ loglar tahlili va anomaliyalarni aniqlash.',
+        level: 'ADVANCED',
+        hours: 22,
+        prerequisites: ['Linux va Tarmoq asoslari'],
+        modules: [
+          {
+            slug: 'siem-detection',
+            title: '1-Modul: Loglar Auditi va Alertlarni Sozlash',
+            description: 'Autentifikatsiya xatoliklari, brute-force va noodatiy buyruqlarni tutish.',
+            lessons: [
+              {
+                slug: 'log-analysis-bruteforce',
+                title: '1.1. SSH va Web Brute-Force Hujumlarini Loglardan Aniqlash',
+                duration: '35 daqiqa',
+                xp: 80,
+                summary: '/var/log/auth.log tahlili va muvaffaqiyatsiz urinishlarni avtomatik bloklash.',
+                content: {
+                  overview: 'SOC tahlilchisining asosiy vazifasi — millionlab log yozuvlari orasidan haqiqiy anomaliya va hujumni aniqlashdir.',
+                  keyConcepts: [
+                    { term: 'Failed Password Logs', definition: 'SSH yoki veb-interfeysda parolni noto\'g\'ri terish natijasida hosil bo\'luvchi hodisalar.' },
+                    { term: 'Correlation Rules', definition: 'Qisqa vaqt ichida (1 daqiqada 10 marta) xato kirish bo\'lsa ogohlantirish beruvchi SIEM qoidalari.' },
+                    { term: 'MITRE ATT&CK T1110', definition: 'Parollarni taxmin qilish va lug\'at orqali hujum (Brute Force) texnikasi kodi.' }
+                  ],
+                  codeExample: {
+                    language: 'bash',
+                    title: 'SSH Loglaridan Hujumchi IP Manzillarini Sanash',
+                    code: `grep "Failed password" /var/log/auth.log | awk '{print $(NF-3)}' | sort | uniq -c | sort -nr | head -10`,
+                    explanation: 'Ushbu buyruq eng ko\'p noto\'g\'ri parol kiritgan begona IP manzillar ro\'yxatini chiqarib beradi.'
+                  },
+                  attackScenario: {
+                    title: 'SSH Serverga Hydra orqali Lug\'at Hujumi',
+                    steps: [
+                      'Hujumchi port 22 ga sekundiga 50 ta login so\'rovi jo\'natadi.',
+                      'Server loglarida soniyada o\'nlab "Failed password for root" yozuvlari qayd etiladi.'
+                    ],
+                    samplePayload: 'hydra -l root -P passwords.txt ssh://192.168.1.100'
+                  },
+                  defenseRecommendations: [
+                    'Fail2ban yoki avtomatik IP bloklash xizmatlarini ishga tushirish.',
+                    'SSH da parolli kirishni taqiqlab, faqat SSH Ed25519 kalitlarini qoldirish.'
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  'osint-recon': {
+    slug: 'osint-recon',
+    title: 'OSINT & Kiber Razvedka',
+    subtitle: 'Ochiq manbalar orqali ma\'lumot yig\'ish va nishonni tahlil qilish',
+    description: 'Qonuniy ochiq manbalar (Google Dorks, Shodan, WHOIS, DNS, ijtimoiy tarmoqlar) orqali kiber razvedka o\'tkazish va kiber-tahdidlarni oldindan aniqlash.',
+    level: 'BEGINNER',
+    hours: 25,
+    coursesCount: 2,
+    badgeColor: 'border-teal-500/30 text-teal-400 bg-teal-500/10',
+    iconName: 'Search',
+    skills: ['Google Dorking', 'Shodan IoT Search', 'DNS Reconnaissance', 'Subdomain Enumeration', 'Metadata Extraction'],
+    courses: [
+      {
+        slug: 'osint-gathering',
+        title: 'OSINT & Passiv Razvedka Asoslari',
+        description: 'Nishon serverga to\'g\'ridan-to\'g\'ri ulanmasdan ma\'lumot yig\'ish usullari.',
+        level: 'BEGINNER',
+        hours: 12,
+        prerequisites: ['Umumiy internet savodxonligi'],
+        modules: [
+          {
+            slug: 'google-dorking',
+            title: '1-Modul: Qidiruv Tizimlari Razvedkasi',
+            description: 'Google Dork operatorlari va ochiq qolgan nozik ma\'lumotlarni qidirish.',
+            lessons: [
+              {
+                slug: 'google-dorking-secrets',
+                title: '1.1. Google Dorking Orqali Maxfiy Fayllarni Topish',
+                duration: '25 daqiqa',
+                xp: 60,
+                summary: 'filetype, site, inurl operatorlari va ochiq qolgan .env yoki backup fayllar.',
+                content: {
+                  overview: 'Google Dorking (Google Hacking) — qidiruv tizimining maxsus operatorlari yordamida internetda ochiq qolib ketgan konfiguratsiya fayllari, parollar va admin panellarni topish usuli.',
+                  keyConcepts: [
+                    { term: 'site:domen.uz', definition: 'Qidiruvni faqatgina ma\'lum bir domen bilan cheklaydi.' },
+                    { term: 'filetype:env yoki filetype:sql', definition: 'Faqat aniq bir fayl kengaytmasiga ega natijalarni filtrlaydi.' },
+                    { term: 'intext:"index of /"', definition: 'Ochiq qolgan ochiq kataloglarni (Directory Listing) aniqlaydi.' }
+                  ],
+                  codeExample: {
+                    language: 'text',
+                    title: 'Samarali Google Dork Namunasi',
+                    code: `site:target.uz filetype:env "DB_PASSWORD"\nsite:target.uz inurl:admin "login"\nsite:target.uz filetype:sql "INSERT INTO"`,
+                    explanation: 'Ushbu so\'rovlar veb-sayt dasturchilari bilmasdan ommaga ochiq qoldirgan maxfiy ma\'lumotlarni fosh qiladi.'
+                  },
+                  attackScenario: {
+                    title: 'Ochiq Qolgan .git Papkasini Yuklab Olish',
+                    steps: [
+                      'Dork orqali sayt ildizida .git papkasi ochiqligi aniqlanadi.',
+                      'git-dumper vositasi orqali butun loyihaning barcha commitlari va kodlari qayta tiklanadi.'
+                    ],
+                    samplePayload: 'git-dumper https://target.uz/.git/ output_dir/'
+                  },
+                  defenseRecommendations: [
+                    'Web server konfiguratsiyasida (Nginx/Apache) barcha yashirin fayllarga (.git, .env) kirishni qat\'iyan taqiqlash (`location ~ /\\. { deny all; }`).',
+                    'Directory Indexing xususiyatini o\'chirib qo\'yish.'
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 };
