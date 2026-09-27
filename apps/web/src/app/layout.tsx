@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { Navbar } from '@/components/layout/navbar';
-import { Footer } from '@/components/layout/footer';
+import { PlatformShell } from '@/components/layout/platform-shell';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
@@ -18,12 +17,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="uz" className="dark">
-      <body className={`${inter.variable} font-sans bg-base text-primary min-h-screen flex flex-col`}>
-        <Navbar />
-        <main className="flex-1 flex flex-col">
+      <body className={`${inter.variable} font-sans bg-[#070A0E] text-gray-100 min-h-screen`}>
+        <PlatformShell>
           {children}
-        </main>
-        <Footer />
+        </PlatformShell>
       </body>
     </html>
   );
