@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphQL Explorer — Internal Schema IDE</title>
+    <style>
+        :root {
+            --primary: #e11d48;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: monospace; }
+        body { background: var(--bg); color: var(--text); padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+        .brand { font-size: 18px; font-weight: bold; color: #fff; }
+        .brand span { color: var(--primary); }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        textarea { width: 100%; height: 200px; background: #0b1120; border: 1px solid var(--border); color: #f43f5e; padding: 12px; border-radius: 8px; font-size: 12px; outline: none; }
+        .btn { background: var(--primary); color: #fff; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; }
+        .out { background: #0b1120; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 12px; color: #cbd5e1; height: 200px; overflow-y: auto; white-space: pre-wrap; }
+        .flag { margin-top: 14px; padding: 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981; font-weight: bold; border-radius: 8px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">🕸️ GraphQL<span>IDE</span> Console (/graphql)</div>
+        <div style="font-size: 11px; background: rgba(225, 29, 72, 0.15); border: 1px solid var(--primary); color: var(--primary); padding: 3px 8px; border-radius: 4px;">
+            Introspection & Information Disclosure Lab
+        </div>
+    </div>
+
+    <div class="grid">
+        <div>
+            <h4 style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">GraphQL So'rovi:</h4>
+            <textarea id="queryInput">{
+  __schema {
+    types {
+      name
+      fields {
+        name
+      }
+    }
+  }
+}</textarea>
+            <button class="btn" onclick="runQuery()">So'rovni Bajarish (Execute Query)</button>
+        </div>
+
+        <div>
+            <h4 style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">Server Qaytargan JSON:</h4>
+            <div id="resultBox" class="out">Kutilyapti...</div>
+        </div>
+    </div>
+
+    <div id="flagBox" class="flag"></div>
+
+    <script>
+        function runQuery() {
+            const q = document.getElementById('queryInput').value;
+            const res = document.getElementById('resultBox');
+            const flagBox = document.getElementById('flagBox');
+
+            if (q.includes('__schema') || q.includes('__type')) {
+                const flag = "FLAG{graphql_introspection_schema_leak_6621}";
+                res.innerText = JSON.stringify({
+                    data: {
+                        __schema: {
+                            types: [
+                                { name: "User", fields: [{ name: "id" }, { name: "username" }] },
+                                { name: "Order", fields: [{ name: "id" }, { name: "amount" }] },
+                                { 
+                                    name: "AdminSecretsVault", 
+                                    description: "Yashirin admin ob'ekti",
+                                    fields: [
+                                        { name: "masterKey" },
+                                        { name: "flag", value: flag }
+                                    ] 
+                                }
+                            ]
+                        }
+                    }
+                }, null, 2);
+
+                flagBox.style.display = 'block';
+                flagBox.innerHTML = `🎉 Introspection Zaifligi Aniqlashdi! Server sxemasi to'liq fosh bo'ldi.<br>Flag: <strong>${flag}</strong>`;
+
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'lab_evidence',
+                        labId: 'graphql-lab',
+                        evidence: {
+                            type: 'graphql_introspection_leak',
+                            query: q,
+                            flag: flag,
+                            timestamp: new Date().toISOString()
+                        }
+                    }, '*');
+                }
+            } else if (q.includes('AdminSecretsVault') || q.includes('masterKey')) {
+                const flag = "FLAG{graphql_introspection_schema_leak_6621}";
+                res.innerText = JSON.stringify({
+                    data: {
+                        AdminSecretsVault: {
+                            masterKey: "SEC-992-AKL-29",
+                            flag: flag
+                        }
+                    }
+                }, null, 2);
+            } else {
+                res.innerText = JSON.stringify({
+                    data: {
+                        users: [{ id: "1", username: "alex" }]
+                    }
+                }, null, 2);
+                flagBox.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -2,16 +2,17 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: cybertrip-db
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: cybertrip
-      POSTGRES_PASSWORD: cybertrip_dev_2024
-      POSTGRES_DB: cybertrip
+      POSTGRES_USER: ${POSTGRES_USER:-cybertrip}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cybertrip_dev_2024}
+      POSTGRES_DB: ${POSTGRES_DB:-cybertrip}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cybertrip"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cybertrip}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -19,6 +20,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: cybertrip-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
@@ -28,6 +30,42 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: cybertrip-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cybertrip}:${POSTGRES_PASSWORD:-cybertrip_dev_2024}@postgres:5432/${POSTGRES_DB:-cybertrip}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-cybertrip_super_secure_jwt_secret_production_2026}
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://cybertrip.uz,http://localhost:3000}
+    ports:
+      - "4000:4000"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: cybertrip-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000/api}
+    ports:
+      - "3000:3000"
 
 volumes:
   pgdata:

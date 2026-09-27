@@ -1,0 +1,35 @@
+# Multi-stage production Dockerfile for @cybertrip/api (NestJS)
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy root configs & workspace manifests
+COPY package.json package-lock.json turbo.json tsconfig.base.json ./
+COPY packages/ ./packages/
+COPY apps/api/ ./apps/api/
+
+# Install dependencies and build
+RUN npm ci
+RUN npx turbo run build --filter=@cybertrip/api...
+
+# Production image
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=4000
+
+COPY package.json package-lock.json ./
+COPY packages/database/package.json ./packages/database/
+COPY packages/database/prisma/ ./packages/database/prisma/
+COPY apps/api/package.json ./apps/api/
+
+RUN npm ci --omit=dev
+RUN npx prisma generate --schema=./packages/database/prisma/schema.prisma
+
+COPY --from=builder /app/packages/ ./packages/
+COPY --from=builder /app/apps/api/dist/ ./apps/api/dist/
+
+EXPOSE 4000
+
+CMD ["node", "apps/api/dist/main.js"]

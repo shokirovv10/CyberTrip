@@ -1,20 +1,124 @@
-import { PrismaClient, Role, Difficulty, ContentStatus, LabCategory, CTFCategory, FlagType, TournamentStatus } from '@prisma/client';
+import { 
+  PrismaClient, 
+  Role, 
+  Difficulty, 
+  ContentStatus, 
+  LabCategory, 
+  CTFCategory, 
+  FlagType, 
+  TournamentStatus,
+  QuestionType 
+} from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { CURRICULUM_DATA } from '../../apps/web/src/lib/curriculum-data';
+import { LABS_DATA } from '../../apps/web/src/lib/labs-data';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  console.log('Starting seed...');
+const difficultyMap: Record<string, Difficulty> = {
+  beginner: Difficulty.BEGINNER,
+  easy: Difficulty.BEGINNER,
+  intermediate: Difficulty.INTERMEDIATE,
+  medium: Difficulty.INTERMEDIATE,
+  advanced: Difficulty.ADVANCED,
+  hard: Difficulty.ADVANCED,
+  expert: Difficulty.EXPERT,
+};
 
-  // === USERS & AUTH ===
-  console.log('Seeding users...');
+const labCategoryMap: Record<string, LabCategory> = {
+  SQL_INJECTION: LabCategory.SQL_INJECTION,
+  XSS: LabCategory.XSS,
+  CSRF: LabCategory.CSRF,
+  IDOR: LabCategory.IDOR,
+  API_SECURITY: LabCategory.AUTHENTICATION,
+  SSRF: LabCategory.SSRF,
+  XXE: LabCategory.XXE,
+  SSTI: LabCategory.SSTI,
+  PATH_TRAVERSAL: LabCategory.PATH_TRAVERSAL,
+  FILE_UPLOAD: LabCategory.FILE_UPLOAD,
+  AUTHENTICATION: LabCategory.AUTHENTICATION,
+  JWT: LabCategory.JWT,
+  CORS: LabCategory.CORS,
+  OPEN_REDIRECT: LabCategory.OPEN_REDIRECT,
+  SECURITY_HEADERS: LabCategory.MISCONFIGURATION,
+  BUSINESS_LOGIC: LabCategory.BUSINESS_LOGIC,
+  RACE_CONDITION: LabCategory.RACE_CONDITION,
+  GRAPHQL: LabCategory.GRAPHQL,
+  WEBSOCKET: LabCategory.WEBSOCKET,
+  COMMAND_INJECTION: LabCategory.COMMAND_INJECTION,
+  LINUX: LabCategory.LINUX,
+  FORENSICS: LabCategory.FORENSICS,
+  OSINT: LabCategory.OSINT,
+  NETWORK: LabCategory.NETWORKING,
+  NETWORKING: LabCategory.NETWORKING,
+  CTF: LabCategory.MISCONFIGURATION,
+  ASSESSMENT: LabCategory.MISCONFIGURATION,
+  CRYPTOGRAPHY: LabCategory.CRYPTOGRAPHY,
+};
+
+function getTargetUrl(labDef: any): string {
+  const app = (labDef.targetApp || '').toLowerCase();
+  const cat = labDef.category || '';
+
+  if (app.includes('order') || (cat === 'IDOR' && app.includes('order'))) {
+    return '/targets/orderhub/index.html';
+  } else if (app.includes('api') || cat === 'JWT' || cat === 'API_SECURITY') {
+    return '/targets/cyberapi/index.html';
+  } else if (app.includes('report') || cat === 'XXE') {
+    return '/targets/reportmanager/index.html';
+  } else if (app.includes('invoice') || cat === 'SSTI') {
+    return '/targets/invoicebuilder/index.html';
+  } else if (app.includes('file') || cat === 'PATH_TRAVERSAL') {
+    return '/targets/filemanager/index.html';
+  } else if (app.includes('shop') || cat === 'BUSINESS_LOGIC') {
+    return '/targets/shopflow/index.html';
+  } else if (app.includes('flash') || cat === 'RACE_CONDITION') {
+    return '/targets/flashsale/index.html';
+  } else if (app.includes('graphql') || cat === 'GRAPHQL') {
+    return '/targets/graphql-lab/index.html';
+  } else if (app.includes('support') || app.includes('realtime') || cat === 'WEBSOCKET') {
+    return '/targets/realtime-support/index.html';
+  } else if (app.includes('auth') || cat === 'AUTHENTICATION') {
+    return '/targets/secureauth/index.html';
+  } else if (app.includes('case') || cat === 'FORENSICS') {
+    return '/targets/cybercase/index.html';
+  } else if (app.includes('intel') || cat === 'OSINT') {
+    return '/targets/inteldesk/index.html';
+  } else if (app.includes('vault') || app.includes('media') || cat === 'FILE_UPLOAD') {
+    return '/targets/mediavault/index.html';
+  } else if (app.includes('preview') || cat === 'SSRF') {
+    return '/targets/sitepreview/index.html';
+  } else if (app.includes('forum') || cat === 'XSS' || cat === 'CSRF' || cat === 'CORS') {
+    return '/targets/cyberforum/index.html';
+  } else if (app.includes('diagnostic') || cat === 'COMMAND_INJECTION') {
+    return '/targets/diagnosticpanel/index.html';
+  } else if (app.includes('doc') || cat === 'IDOR') {
+    return '/targets/securedocs/index.html';
+  } else {
+    return '/targets/cyberbooks/index.html';
+  }
+}
+
+async function main() {
+  console.log('🚀 Starting Master Database Seeding for CYBERTRIP.UZ...');
+
+  // ============================================================
+  // 1. USERS & AUTHENTICATION
+  // ============================================================
+  console.log('👤 Seeding default users...');
   const adminPassword = await bcrypt.hash('CyberTrip2024!', 10);
   const studentPassword = await bcrypt.hash('student123', 10);
+  const instructorPassword = await bcrypt.hash('instructor123', 10);
 
   const admin = await prisma.user.upsert({
     where: { email: 'admin@cybertrip.uz' },
-    update: {},
+    update: {
+      role: Role.ADMIN,
+      displayName: 'CyberTrip Admin',
+      isActive: true,
+      emailVerified: true,
+    },
     create: {
       id: crypto.randomUUID(),
       email: 'admin@cybertrip.uz',
@@ -29,7 +133,12 @@ async function main() {
 
   const student = await prisma.user.upsert({
     where: { email: 'student@test.uz' },
-    update: {},
+    update: {
+      role: Role.STUDENT,
+      displayName: 'Test Talaba',
+      isActive: true,
+      emailVerified: true,
+    },
     create: {
       id: crypto.randomUUID(),
       email: 'student@test.uz',
@@ -42,214 +151,370 @@ async function main() {
     },
   });
 
-  // === LEARNING PATHS ===
-  console.log('Seeding learning paths...');
-  const paths = [
-    { slug: 'web-pentest', title: 'Web Pentest Asoslari', difficulty: Difficulty.BEGINNER, estimatedHours: 40, icon: '🌐', status: ContentStatus.PUBLISHED, order: 1 },
-    { slug: 'linux-security', title: 'Linux va Tizim Xavfsizligi', difficulty: Difficulty.BEGINNER, estimatedHours: 30, icon: '🐧', status: ContentStatus.PUBLISHED, order: 2 },
-    { slug: 'network-security', title: 'Tarmoq Xavfsizligi', difficulty: Difficulty.INTERMEDIATE, estimatedHours: 35, icon: '🔌', status: ContentStatus.PUBLISHED, order: 3 },
-    { slug: 'cryptography', title: 'Kriptografiya Asoslari', difficulty: Difficulty.INTERMEDIATE, estimatedHours: 25, icon: '🔐', status: ContentStatus.PUBLISHED, order: 4 },
-    { slug: 'soc-blue-team', title: 'SOC va Blue Team', difficulty: Difficulty.ADVANCED, estimatedHours: 45, icon: '🛡️', status: ContentStatus.PUBLISHED, order: 5 },
-    { slug: 'osint-recon', title: 'OSINT va Razvedka', difficulty: Difficulty.INTERMEDIATE, estimatedHours: 20, icon: '🔍', status: ContentStatus.PUBLISHED, order: 6 },
-  ];
-
-  const createdPaths = {};
-  for (const path of paths) {
-    createdPaths[path.slug] = await prisma.learningPath.upsert({
-      where: { slug: path.slug },
-      update: { ...path },
-      create: { id: crypto.randomUUID(), ...path },
-    });
-  }
-
-  // === COURSES ===
-  console.log('Seeding courses...');
-  const webPathId = createdPaths['web-pentest'].id;
-  const courses = [
-    { slug: 'http-web-architecture', title: 'HTTP va Web Arxitekturasi', difficulty: Difficulty.BEGINNER, estimatedHours: 8, order: 1, status: ContentStatus.PUBLISHED, learningPathId: webPathId },
-    { slug: 'sql-injection', title: 'SQL Injection', difficulty: Difficulty.INTERMEDIATE, estimatedHours: 10, order: 2, status: ContentStatus.PUBLISHED, learningPathId: webPathId },
-    { slug: 'xss', title: 'Cross-Site Scripting (XSS)', difficulty: Difficulty.INTERMEDIATE, estimatedHours: 8, order: 3, status: ContentStatus.PUBLISHED, learningPathId: webPathId },
-    { slug: 'auth-security', title: 'Autentifikatsiya va Avtorizatsiya', difficulty: Difficulty.INTERMEDIATE, estimatedHours: 10, order: 4, status: ContentStatus.PUBLISHED, learningPathId: webPathId },
-    { slug: 'api-security', title: 'API Xavfsizligi', difficulty: Difficulty.ADVANCED, estimatedHours: 12, order: 5, status: ContentStatus.PUBLISHED, learningPathId: webPathId },
-  ];
-
-  const createdCourses = {};
-  for (const course of courses) {
-    createdCourses[course.slug] = await prisma.course.upsert({
-      where: { slug: course.slug },
-      update: { ...course },
-      create: { id: crypto.randomUUID(), ...course },
-    });
-  }
-
-  // === MODULES & LESSONS ===
-  console.log('Seeding modules and lessons...');
-  // Clear existing modules for these courses to avoid duplicates on re-seed since no unique constraint exists
-  await prisma.module.deleteMany({
-    where: { courseId: { in: [createdCourses['http-web-architecture'].id, createdCourses['sql-injection'].id] } }
+  const instructor = await prisma.user.upsert({
+    where: { email: 'instructor@cybertrip.uz' },
+    update: {
+      role: Role.INSTRUCTOR,
+      displayName: 'CyberTrip Bosh Murabbiy',
+      isActive: true,
+      emailVerified: true,
+    },
+    create: {
+      id: crypto.randomUUID(),
+      email: 'instructor@cybertrip.uz',
+      username: 'instructor1',
+      displayName: 'CyberTrip Bosh Murabbiy',
+      role: Role.INSTRUCTOR,
+      passwordHash: instructorPassword,
+      isActive: true,
+      emailVerified: true,
+    },
   });
 
-  // Modules for HTTP Course
-  const httpCourseId = createdCourses['http-web-architecture'].id;
-  const httpMod1 = await prisma.module.create({ data: { id: crypto.randomUUID(), courseId: httpCourseId, title: 'HTTP Asoslari', order: 1 } });
-  const httpMod2 = await prisma.module.create({ data: { id: crypto.randomUUID(), courseId: httpCourseId, title: 'Cookie va Sessiyalar', order: 2 } });
-  const httpMod3 = await prisma.module.create({ data: { id: crypto.randomUUID(), courseId: httpCourseId, title: 'Xavfsizlik Headerlari', order: 3 } });
+  console.log(`✅ Users seeded: admin (${admin.id}), student (${student.id}), instructor (${instructor.id})`);
 
-  // Modules for SQLi Course
-  const sqliCourseId = createdCourses['sql-injection'].id;
-  const sqliMod1 = await prisma.module.create({ data: { id: crypto.randomUUID(), courseId: sqliCourseId, title: 'SQL Tili Asoslari', order: 1 } });
-  const sqliMod2 = await prisma.module.create({ data: { id: crypto.randomUUID(), courseId: sqliCourseId, title: 'SQL Injection Hujumlari', order: 2 } });
-  const sqliMod3 = await prisma.module.create({ data: { id: crypto.randomUUID(), courseId: sqliCourseId, title: 'Himoyalanish Usullari', order: 3 } });
+  // ============================================================
+  // 2. MASTER CURRICULUM (6 Paths, 15 Courses, 30 Modules, 172 Lessons, 172 Quizzes)
+  // ============================================================
+  console.log('📚 Seeding 6 Learning Paths, 15 Courses, 30 Modules, 172 Lessons & Quizzes...');
 
-  const lessons = [
-    { slug: 'http-nima', moduleId: httpMod1.id, title: 'HTTP nima?', contentMdx: `# HTTP nima?
+  const pathIcons: Record<string, string> = {
+    'web-pentest': '🌐',
+    'linux-security': '🐧',
+    'network-security': '🔌',
+    'cyber-fundamentals': '🛡️',
+    'soc-blue-team': '🎯',
+    'ctf-challenge': '🚩',
+  };
 
-HTTP (HyperText Transfer Protocol) - bu internet orqali ma'lumotlarni uzatish uchun ishlatiladigan asosiy protokollardan biridir.
+  let totalPathsSeeded = 0;
+  let totalCoursesSeeded = 0;
+  let totalModulesSeeded = 0;
+  let totalLessonsSeeded = 0;
+  let totalQuizzesSeeded = 0;
 
-## Qanday ishlaydi?
-Mijoz (Client) serverga so'rov (Request) yuboradi va server javob (Response) qaytaradi.
+  for (const [pathSlug, pathData] of Object.entries(CURRICULUM_DATA)) {
+    const diff = difficultyMap[pathData.level.toLowerCase()] || Difficulty.BEGINNER;
+    const icon = pathIcons[pathSlug] || '🛡️';
 
-\`\`\`http
-GET / HTTP/1.1
-Host: cybertrip.uz
-\`\`\`
-    `, xpReward: 50, estimatedMinutes: 15, status: ContentStatus.PUBLISHED, order: 1 },
-    { slug: 'http-metodlar', moduleId: httpMod1.id, title: 'HTTP Metodlari', contentMdx: `# HTTP Metodlari\nEng ko'p ishlatiladigan metodlar: GET, POST, PUT, DELETE...`, xpReward: 50, estimatedMinutes: 20, status: ContentStatus.PUBLISHED, order: 2 },
-    { slug: 'http-status-kodlar', moduleId: httpMod1.id, title: 'Status Kodlari', contentMdx: `# Status Kodlari\n200 OK, 404 Not Found, 500 Internal Server Error...`, xpReward: 50, estimatedMinutes: 15, status: ContentStatus.PUBLISHED, order: 3 },
-    
-    { slug: 'cookie-asoslari', moduleId: httpMod2.id, title: 'Cookie Nima?', contentMdx: `# Cookie\nServer mijoz brauzerida saqlaydigan kichik ma'lumotlar...`, xpReward: 75, estimatedMinutes: 20, status: ContentStatus.PUBLISHED, order: 1 },
-    { slug: 'sessiya-boshqaruvi', moduleId: httpMod2.id, title: 'Sessiyalarni Boshqarish', contentMdx: `# Sessiyalar\nFoydalanuvchi holatini saqlash texnikalari...`, xpReward: 75, estimatedMinutes: 25, status: ContentStatus.PUBLISHED, order: 2 },
-  ];
-
-  for (const lesson of lessons) {
-    await prisma.lesson.upsert({
-      where: { slug: lesson.slug },
-      update: { ...lesson },
-      create: { id: crypto.randomUUID(), ...lesson },
+    const dbPath = await prisma.learningPath.upsert({
+      where: { slug: pathSlug },
+      update: {
+        title: pathData.title,
+        description: pathData.description,
+        difficulty: diff,
+        estimatedHours: pathData.hours,
+        icon,
+        status: ContentStatus.PUBLISHED,
+        order: totalPathsSeeded + 1,
+      },
+      create: {
+        id: crypto.randomUUID(),
+        slug: pathSlug,
+        title: pathData.title,
+        description: pathData.description,
+        difficulty: diff,
+        estimatedHours: pathData.hours,
+        icon,
+        status: ContentStatus.PUBLISHED,
+        order: totalPathsSeeded + 1,
+      },
     });
+    totalPathsSeeded++;
+
+    // Seed Courses for this path
+    let courseOrder = 1;
+    for (const courseData of pathData.courses) {
+      const courseDiff = difficultyMap[courseData.level.toLowerCase()] || diff;
+
+      const dbCourse = await prisma.course.upsert({
+        where: { slug: courseData.slug },
+        update: {
+          learningPathId: dbPath.id,
+          title: courseData.title,
+          description: courseData.description,
+          difficulty: courseDiff,
+          estimatedHours: courseData.hours,
+          prerequisites: courseData.prerequisites || null,
+          order: courseOrder++,
+          status: ContentStatus.PUBLISHED,
+        },
+        create: {
+          id: crypto.randomUUID(),
+          slug: courseData.slug,
+          learningPathId: dbPath.id,
+          title: courseData.title,
+          description: courseData.description,
+          difficulty: courseDiff,
+          estimatedHours: courseData.hours,
+          prerequisites: courseData.prerequisites || null,
+          order: courseOrder++,
+          status: ContentStatus.PUBLISHED,
+        },
+      });
+      totalCoursesSeeded++;
+
+      // Seed Modules for this course
+      let moduleOrder = 1;
+      for (const modData of courseData.modules) {
+        let dbModule = await prisma.module.findFirst({
+          where: { courseId: dbCourse.id, title: modData.title },
+        });
+
+        if (!dbModule) {
+          dbModule = await prisma.module.create({
+            data: {
+              id: crypto.randomUUID(),
+              courseId: dbCourse.id,
+              title: modData.title,
+              description: modData.description,
+              order: moduleOrder++,
+            },
+          });
+        } else {
+          dbModule = await prisma.module.update({
+            where: { id: dbModule.id },
+            data: {
+              description: modData.description,
+              order: moduleOrder++,
+            },
+          });
+        }
+        totalModulesSeeded++;
+
+        // Seed Lessons for this module
+        let lessonOrder = 1;
+        for (const lessonData of modData.lessons) {
+          const estimatedMins = parseInt(lessonData.duration.replace(/\D/g, ''), 10) || 20;
+
+          const dbLesson = await prisma.lesson.upsert({
+            where: {
+              moduleId_slug: {
+                moduleId: dbModule.id,
+                slug: lessonData.slug,
+              },
+            },
+            update: {
+              title: lessonData.title,
+              contentMdx: lessonData.content,
+              summary: lessonData.summary || null,
+              estimatedMinutes: estimatedMins,
+              xpReward: lessonData.xp || lessonData.completionXp || 50,
+              order: lessonOrder++,
+              isPremium: !!lessonData.isPremium,
+              status: ContentStatus.PUBLISHED,
+            },
+            create: {
+              id: crypto.randomUUID(),
+              moduleId: dbModule.id,
+              slug: lessonData.slug,
+              title: lessonData.title,
+              contentMdx: lessonData.content,
+              summary: lessonData.summary || null,
+              estimatedMinutes: estimatedMins,
+              xpReward: lessonData.xp || lessonData.completionXp || 50,
+              order: lessonOrder++,
+              isPremium: !!lessonData.isPremium,
+              status: ContentStatus.PUBLISHED,
+            },
+          });
+          totalLessonsSeeded++;
+
+          // Seed Quiz if available
+          if (lessonData.quiz && Array.isArray(lessonData.quiz.questions) && lessonData.quiz.questions.length > 0) {
+            let dbQuiz = await prisma.quiz.findFirst({
+              where: { lessonId: dbLesson.id },
+            });
+
+            if (!dbQuiz) {
+              dbQuiz = await prisma.quiz.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  lessonId: dbLesson.id,
+                  title: `${lessonData.title} — Bilimni tekshirish`,
+                  description: `${lessonData.title} mavzusi bo'yicha interaktiv test`,
+                  passingScore: lessonData.quiz.passingScore || 80,
+                  xpReward: lessonData.quizXp || 25,
+                },
+              });
+            }
+
+            // Remove existing questions to allow clean updates
+            await prisma.quizQuestion.deleteMany({
+              where: { quizId: dbQuiz.id },
+            });
+
+            let qOrder = 1;
+            for (const q of lessonData.quiz.questions) {
+              const dbQ = await prisma.quizQuestion.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  quizId: dbQuiz.id,
+                  questionText: q.question,
+                  questionType: QuestionType.SINGLE_CHOICE,
+                  explanation: q.explanation || null,
+                  order: qOrder++,
+                  points: 10,
+                },
+              });
+
+              if (Array.isArray(q.options)) {
+                let ansOrder = 0;
+                for (const opt of q.options) {
+                  await prisma.quizAnswer.create({
+                    data: {
+                      id: crypto.randomUUID(),
+                      questionId: dbQ.id,
+                      answerText: opt,
+                      isCorrect: ansOrder === q.correctAnswer,
+                      order: ansOrder++,
+                    },
+                  });
+                }
+              }
+            }
+            totalQuizzesSeeded++;
+          }
+        }
+      }
+    }
   }
 
-  // === LABS ===
-  console.log('Seeding labs...');
-  const labs = [
-    { slug: 'sqli-cyberbooks', title: 'SQL Injection - CyberBooks', category: LabCategory.SQL_INJECTION, difficulty: Difficulty.BEGINNER, estimatedMinutes: 45, xpReward: 200, targetApp: 'cyberbooks' },
-    { slug: 'blind-sqli', title: 'Blind SQL Injection', category: LabCategory.SQL_INJECTION, difficulty: Difficulty.INTERMEDIATE, estimatedMinutes: 60, xpReward: 300 },
-    { slug: 'stored-xss-cyberforum', title: 'Stored XSS - CyberForum', category: LabCategory.XSS, difficulty: Difficulty.BEGINNER, estimatedMinutes: 30, xpReward: 150, targetApp: 'cyberforum' },
-    { slug: 'reflected-xss', title: 'Reflected XSS', category: LabCategory.XSS, difficulty: Difficulty.INTERMEDIATE, estimatedMinutes: 45, xpReward: 250 },
-    { slug: 'dom-xss', title: 'DOM-based XSS', category: LabCategory.XSS, difficulty: Difficulty.ADVANCED, estimatedMinutes: 60, xpReward: 350 },
-    { slug: 'idor-securedocs', title: 'IDOR - SecureDocs', category: LabCategory.IDOR, difficulty: Difficulty.BEGINNER, estimatedMinutes: 30, xpReward: 200, targetApp: 'securedocs' },
-    { slug: 'ssrf-sitepreview', title: 'SSRF - SitePreview', category: LabCategory.SSRF, difficulty: Difficulty.INTERMEDIATE, estimatedMinutes: 45, xpReward: 300, targetApp: 'site-preview' },
-    { slug: 'xxe-reportmanager', title: 'XXE - ReportManager', category: LabCategory.XXE, difficulty: Difficulty.INTERMEDIATE, estimatedMinutes: 45, xpReward: 300, targetApp: 'report-manager' },
-    { slug: 'ssti-invoicebuilder', title: 'SSTI - InvoiceBuilder', category: LabCategory.SSTI, difficulty: Difficulty.ADVANCED, estimatedMinutes: 60, xpReward: 400, targetApp: 'invoice-builder' },
-    { slug: 'file-upload-mediavault', title: 'File Upload - MediaVault', category: LabCategory.FILE_UPLOAD, difficulty: Difficulty.INTERMEDIATE, estimatedMinutes: 45, xpReward: 250, targetApp: 'media-vault' },
-    { slug: 'path-traversal-filemanager', title: 'Path Traversal - FileManager', category: LabCategory.PATH_TRAVERSAL, difficulty: Difficulty.BEGINNER, estimatedMinutes: 30, xpReward: 200, targetApp: 'file-manager' },
-    { slug: 'command-injection-diagnostic', title: 'Command Injection - DiagnosticPanel', category: LabCategory.COMMAND_INJECTION, difficulty: Difficulty.INTERMEDIATE, estimatedMinutes: 45, xpReward: 300, targetApp: 'diagnostic-panel' },
-    { slug: 'jwt-bypass-api', title: 'JWT Bypass - API Gateway', category: LabCategory.JWT, difficulty: Difficulty.ADVANCED, estimatedMinutes: 60, xpReward: 400, targetApp: 'api-gateway' },
-    { slug: 'auth-bypass-secureauth', title: 'Authentication Bypass - SecureAuth', category: LabCategory.AUTHENTICATION, difficulty: Difficulty.BEGINNER, estimatedMinutes: 30, xpReward: 200, targetApp: 'secure-auth' },
-    { slug: 'business-logic-shopflow', title: 'Business Logic - ShopFlow', category: LabCategory.BUSINESS_LOGIC, difficulty: Difficulty.ADVANCED, estimatedMinutes: 60, xpReward: 400, targetApp: 'shop-flow' },
-    { slug: 'race-condition-flashsale', title: 'Race Condition - FlashSale', category: LabCategory.RACE_CONDITION, difficulty: Difficulty.EXPERT, estimatedMinutes: 90, xpReward: 500, targetApp: 'flash-sale' },
-    { slug: 'graphql-introspection', title: 'GraphQL Introspection', category: LabCategory.GRAPHQL, difficulty: Difficulty.INTERMEDIATE, estimatedMinutes: 45, xpReward: 250, targetApp: 'graphql-explorer' },
-    { slug: 'websocket-injection', title: 'WebSocket Injection', category: LabCategory.WEBSOCKET, difficulty: Difficulty.ADVANCED, estimatedMinutes: 60, xpReward: 350, targetApp: 'realtime-support' },
-    { slug: 'cors-misconfig', title: 'CORS Misconfiguration', category: LabCategory.CORS, difficulty: Difficulty.BEGINNER, estimatedMinutes: 30, xpReward: 150 },
-    { slug: 'csrf-token-bypass', title: 'CSRF Token Bypass', category: LabCategory.CSRF, difficulty: Difficulty.INTERMEDIATE, estimatedMinutes: 45, xpReward: 250 },
-    { slug: 'open-redirect', title: 'Open Redirect', category: LabCategory.OPEN_REDIRECT, difficulty: Difficulty.BEGINNER, estimatedMinutes: 20, xpReward: 100 },
-    { slug: 'security-headers', title: 'Security Headers Analysis', category: LabCategory.MISCONFIGURATION, difficulty: Difficulty.BEGINNER, estimatedMinutes: 20, xpReward: 100 },
-    { slug: 'cookie-security', title: 'Cookie Security Testing', category: LabCategory.MISCONFIGURATION, difficulty: Difficulty.BEGINNER, estimatedMinutes: 25, xpReward: 150 },
-    { slug: 'password-reset-vuln', title: 'Password Reset Vulnerability', category: LabCategory.AUTHENTICATION, difficulty: Difficulty.INTERMEDIATE, estimatedMinutes: 45, xpReward: 300 },
-    { slug: 'mass-assignment', title: 'Mass Assignment', category: LabCategory.BUSINESS_LOGIC, difficulty: Difficulty.INTERMEDIATE, estimatedMinutes: 40, xpReward: 250 },
-    { slug: 'linux-permissions', title: 'Linux File Permissions', category: LabCategory.LINUX, difficulty: Difficulty.BEGINNER, estimatedMinutes: 30, xpReward: 150 },
-    { slug: 'linux-processes', title: 'Linux Process Analysis', category: LabCategory.LINUX, difficulty: Difficulty.INTERMEDIATE, estimatedMinutes: 45, xpReward: 200 },
-    { slug: 'network-packets', title: 'Network Packet Analysis', category: LabCategory.NETWORKING, difficulty: Difficulty.INTERMEDIATE, estimatedMinutes: 60, xpReward: 300 },
-    { slug: 'log-analysis', title: 'Log Analysis - Forensics', category: LabCategory.FORENSICS, difficulty: Difficulty.INTERMEDIATE, estimatedMinutes: 45, xpReward: 250 },
-    { slug: 'steganography-hidden', title: 'Steganography - Hidden Data', category: LabCategory.FORENSICS, difficulty: Difficulty.BEGINNER, estimatedMinutes: 30, xpReward: 150 }
-  ];
+  console.log(`✅ Curriculum seeded: ${totalPathsSeeded} paths, ${totalCoursesSeeded} courses, ${totalModulesSeeded} modules, ${totalLessonsSeeded} lessons, ${totalQuizzesSeeded} quizzes!`);
 
-  for (const lab of labs) {
+  // ============================================================
+  // 3. MASTER LABS (60 Complete Real Vulnerable Labs)
+  // ============================================================
+  console.log('🧪 Seeding 60 Complete Hands-on Labs...');
+
+  let labOrder = 1;
+  for (const lab of LABS_DATA) {
+    const category = labCategoryMap[lab.category] || LabCategory.MISCONFIGURATION;
+    const diff = difficultyMap[lab.difficulty.toLowerCase()] || Difficulty.BEGINNER;
+    const entryRoute = getTargetUrl(lab);
+
     const labData = {
-      ...lab,
-      description: `Ushbu laboratoriyada ${lab.title} bo'yicha amaliy ko'nikmalarga ega bo'lasiz.`,
-      briefing: `Tizimga kiring va zaiflikni topib, undan foydalaning.`,
-      objectives: [
-        { title: 'Zaiflikni aniqlash', description: 'Tizimdagi zaif nuqtani toping' },
-        { title: 'Ekspluatatsiya qilish', description: 'Zaiflikdan foydalanib tizimga kiring' }
-      ],
+      title: lab.title,
+      description: lab.description,
+      briefing: lab.briefing,
+      category,
+      difficulty: diff,
+      estimatedMinutes: lab.estimatedMinutes || 30,
+      xpReward: lab.xp || 200,
+      targetApp: lab.targetApp,
+      entryRoute,
+      objectives: lab.objectives,
       status: ContentStatus.PUBLISHED,
+      order: labOrder++,
     };
-    
+
     await prisma.lab.upsert({
       where: { slug: lab.slug },
       update: labData,
-      create: { id: crypto.randomUUID(), ...labData }
+      create: {
+        id: crypto.randomUUID(),
+        slug: lab.slug,
+        ...labData,
+      },
     });
   }
 
-  // === CTF CHALLENGES ===
-  console.log('Seeding CTF challenges...');
+  console.log(`✅ All ${LABS_DATA.length} labs successfully seeded with dedicated target simulators!`);
+
+  // ============================================================
+  // 4. CTF CHALLENGES (15 Challenges)
+  // ============================================================
+  console.log('🚩 Seeding 15 CTF challenges...');
   const ctfs = [
-    { slug: 'web-login-bypass', title: 'Login Bypass', category: CTFCategory.WEB, difficulty: Difficulty.BEGINNER, initialPoints: 100, minPoints: 50, flagHash: await bcrypt.hash('FLAG{admin_bypass_success}', 10) },
-    { slug: 'web-cookie-monster', title: 'Cookie Monster', category: CTFCategory.WEB, difficulty: Difficulty.BEGINNER, initialPoints: 150, minPoints: 100, flagHash: await bcrypt.hash('FLAG{yummy_admin_cookies}', 10) },
-    { slug: 'web-sql-master', title: 'SQL Master', category: CTFCategory.WEB, difficulty: Difficulty.INTERMEDIATE, initialPoints: 200, minPoints: 150, flagHash: await bcrypt.hash('FLAG{union_based_sqli_win}', 10) },
-    { slug: 'web-xss-hunter', title: 'XSS Hunter', category: CTFCategory.WEB, difficulty: Difficulty.INTERMEDIATE, initialPoints: 250, minPoints: 200, flagHash: await bcrypt.hash('FLAG{stored_xss_alert_1}', 10) },
-    { slug: 'web-jwt-cracker', title: 'JWT Cracker', category: CTFCategory.WEB, difficulty: Difficulty.ADVANCED, initialPoints: 300, minPoints: 250, flagHash: await bcrypt.hash('FLAG{jwt_weak_secret_cracked}', 10) },
-    { slug: 'crypto-caesar', title: 'Caesar Cipher', category: CTFCategory.CRYPTO, difficulty: Difficulty.BEGINNER, initialPoints: 100, minPoints: 50, flagHash: await bcrypt.hash('FLAG{hail_caesar}', 10) },
-    { slug: 'crypto-base64', title: 'Base64 Chain', category: CTFCategory.CRYPTO, difficulty: Difficulty.BEGINNER, initialPoints: 100, minPoints: 50, flagHash: await bcrypt.hash('FLAG{base64_is_not_encryption}', 10) },
-    { slug: 'crypto-rsa', title: 'RSA Basics', category: CTFCategory.CRYPTO, difficulty: Difficulty.INTERMEDIATE, initialPoints: 250, minPoints: 200, flagHash: await bcrypt.hash('FLAG{rsa_modulus_factored}', 10) },
-    { slug: 'forensics-hidden', title: 'Hidden Message', category: CTFCategory.FORENSICS, difficulty: Difficulty.BEGINNER, initialPoints: 100, minPoints: 50, flagHash: await bcrypt.hash('FLAG{stego_master}', 10) },
-    { slug: 'forensics-memory', title: 'Memory Dump', category: CTFCategory.FORENSICS, difficulty: Difficulty.INTERMEDIATE, initialPoints: 200, minPoints: 150, flagHash: await bcrypt.hash('FLAG{volatility_is_awesome}', 10) },
-    { slug: 'linux-find-flag', title: 'Find The Flag', category: CTFCategory.LINUX, difficulty: Difficulty.BEGINNER, initialPoints: 100, minPoints: 50, flagHash: await bcrypt.hash('FLAG{grep_is_your_friend}', 10) },
-    { slug: 'linux-privesc', title: 'Privilege Escalation', category: CTFCategory.LINUX, difficulty: Difficulty.ADVANCED, initialPoints: 350, minPoints: 300, flagHash: await bcrypt.hash('FLAG{root_dance}', 10) },
-    { slug: 'network-pcap', title: 'Packet Analysis', category: CTFCategory.NETWORK, difficulty: Difficulty.INTERMEDIATE, initialPoints: 200, minPoints: 150, flagHash: await bcrypt.hash('FLAG{wireshark_shark}', 10) },
-    { slug: 'osint-social', title: 'Social Footprint', category: CTFCategory.OSINT, difficulty: Difficulty.BEGINNER, initialPoints: 150, minPoints: 100, flagHash: await bcrypt.hash('FLAG{osint_detective}', 10) },
-    { slug: 'misc-qr', title: 'QR Code Puzzle', category: CTFCategory.MISC, difficulty: Difficulty.BEGINNER, initialPoints: 100, minPoints: 50, flagHash: await bcrypt.hash('FLAG{qr_scanned_successfully}', 10) },
+    { slug: 'web-login-bypass', title: 'Login Bypass', category: CTFCategory.WEB, difficulty: Difficulty.BEGINNER, initialPoints: 100, minPoints: 50, flag: 'FLAG{admin_bypass_success}' },
+    { slug: 'web-cookie-monster', title: 'Cookie Monster', category: CTFCategory.WEB, difficulty: Difficulty.BEGINNER, initialPoints: 150, minPoints: 100, flag: 'FLAG{yummy_admin_cookies}' },
+    { slug: 'web-sql-master', title: 'SQL Master', category: CTFCategory.WEB, difficulty: Difficulty.INTERMEDIATE, initialPoints: 200, minPoints: 150, flag: 'FLAG{union_based_sqli_win}' },
+    { slug: 'web-xss-hunter', title: 'XSS Hunter', category: CTFCategory.WEB, difficulty: Difficulty.INTERMEDIATE, initialPoints: 250, minPoints: 200, flag: 'FLAG{stored_xss_alert_1}' },
+    { slug: 'web-jwt-cracker', title: 'JWT Cracker', category: CTFCategory.WEB, difficulty: Difficulty.ADVANCED, initialPoints: 300, minPoints: 250, flag: 'FLAG{jwt_weak_secret_cracked}' },
+    { slug: 'crypto-caesar', title: 'Caesar Cipher', category: CTFCategory.CRYPTO, difficulty: Difficulty.BEGINNER, initialPoints: 100, minPoints: 50, flag: 'FLAG{hail_caesar}' },
+    { slug: 'crypto-base64', title: 'Base64 Chain', category: CTFCategory.CRYPTO, difficulty: Difficulty.BEGINNER, initialPoints: 100, minPoints: 50, flag: 'FLAG{base64_is_not_encryption}' },
+    { slug: 'crypto-rsa', title: 'RSA Basics', category: CTFCategory.CRYPTO, difficulty: Difficulty.INTERMEDIATE, initialPoints: 250, minPoints: 200, flag: 'FLAG{rsa_modulus_factored}' },
+    { slug: 'forensics-hidden', title: 'Hidden Message', category: CTFCategory.FORENSICS, difficulty: Difficulty.BEGINNER, initialPoints: 100, minPoints: 50, flag: 'FLAG{stego_master}' },
+    { slug: 'forensics-memory', title: 'Memory Dump', category: CTFCategory.FORENSICS, difficulty: Difficulty.INTERMEDIATE, initialPoints: 200, minPoints: 150, flag: 'FLAG{volatility_is_awesome}' },
+    { slug: 'linux-find-flag', title: 'Find The Flag', category: CTFCategory.LINUX, difficulty: Difficulty.BEGINNER, initialPoints: 100, minPoints: 50, flag: 'FLAG{grep_is_your_friend}' },
+    { slug: 'linux-privesc', title: 'Privilege Escalation', category: CTFCategory.LINUX, difficulty: Difficulty.ADVANCED, initialPoints: 350, minPoints: 300, flag: 'FLAG{root_dance}' },
+    { slug: 'network-pcap', title: 'Packet Analysis', category: CTFCategory.NETWORK, difficulty: Difficulty.INTERMEDIATE, initialPoints: 200, minPoints: 150, flag: 'FLAG{wireshark_shark}' },
+    { slug: 'osint-social', title: 'Social Footprint', category: CTFCategory.OSINT, difficulty: Difficulty.BEGINNER, initialPoints: 150, minPoints: 100, flag: 'FLAG{osint_detective}' },
+    { slug: 'misc-qr', title: 'QR Code Puzzle', category: CTFCategory.MISC, difficulty: Difficulty.BEGINNER, initialPoints: 100, minPoints: 50, flag: 'FLAG{qr_scanned_successfully}' },
   ];
 
   for (const ctf of ctfs) {
+    const flagHash = await bcrypt.hash(ctf.flag, 10);
     const ctfData = {
-      ...ctf,
-      description: `Ushbu CTF topshirig'ida ${ctf.title} mavzusi bo'yicha bilimlaringizni sinab ko'ring.`,
+      title: ctf.title,
+      category: ctf.category,
+      difficulty: ctf.difficulty,
+      initialPoints: ctf.initialPoints,
+      minPoints: ctf.minPoints,
+      flagHash,
+      flagType: FlagType.STATIC,
+      description: `Ushbu CTF topshirig'ida ${ctf.title} mavzusi bo'yicha amaliy bilimlaringizni sinab ko'ring. Flag formati: FLAG{...}.`,
       isActive: true,
-      flagType: FlagType.STATIC
     };
-    
+
     await prisma.cTFChallenge.upsert({
       where: { slug: ctf.slug },
       update: ctfData,
-      create: { id: crypto.randomUUID(), ...ctfData }
+      create: {
+        id: crypto.randomUUID(),
+        slug: ctf.slug,
+        ...ctfData,
+      },
     });
   }
+  console.log(`✅ Seeded ${ctfs.length} CTF challenges!`);
 
-  // === KNOWLEDGE ARTICLES ===
-  console.log('Seeding articles...');
+  // ============================================================
+  // 5. KNOWLEDGE ARTICLES (10 Articles)
+  // ============================================================
+  console.log('📖 Seeding 10 Knowledge Articles...');
   const articles = [
-    { slug: 'xss-nima', title: 'XSS (Cross-Site Scripting) Nima?', category: 'Web Security', content: `XSS haqida batafsil ma'lumot... Bu erda ko'plab matn bo'ladi. XSS bu eng ko'p tarqalgan veb zaifliklardan biridir.`, summary: 'XSS hujumlariga umumiy ta\'rif.', tags: ['xss', 'web', 'security'] },
-    { slug: 'linux-fayl-huquqlari', title: 'Linux fayl huquqlari tizimi', category: 'Linux', content: `Linuxda chmod, chown kabi buyruqlar yordamida fayl huquqlarini boshqarish... Bu xavfsizlik uchun juda muhimdir.`, summary: 'Linux fayl ruxsatlari haqida asosiy bilimlar.', tags: ['linux', 'permissions'] },
-    { slug: 'sql-injection-asoslari', title: 'SQL Injection Asoslari', category: 'Web Security', content: `SQL Injection ma'lumotlar bazasi bilan ishlaydigan ilovalardagi asosiy xavflardan biridir... Uni oldini olish uchun tayyorlangan so'rovlar ishlatiladi.`, summary: 'SQL Injection nima va qanday himoyalanish kerak.', tags: ['sqli', 'database'] },
-    { slug: 'nmap-bilan-tanishuv', title: 'Nmap orqali portlarni skanerlash', category: 'Networking', content: `Nmap - bu tarmoqdagi qurilmalar va ochiq portlarni aniqlash uchun ajoyib vosita... Uning ko'plab parametrlari mavjud.`, summary: 'Nmap vositasi bilan tanishuv.', tags: ['nmap', 'network'] },
-    { slug: 'kriptografiya-tarixi', title: 'Kriptografiyaning qisqacha tarixi', category: 'Cryptography', content: `Qadimgi Rimdan to zamonaviy kvant kriptografiyasigacha... Ma'lumotni yashirish san'ati juda qadimiy.`, summary: 'Kriptografiya tarixi haqida qisqacha.', tags: ['crypto', 'history'] },
-    { slug: 'ctf-musobaqalari', title: 'CTF Musobaqalari haqida', category: 'CTF', content: `Capture The Flag (CTF) - bu axborot xavfsizligi bo'yicha musobaqalar... Ularda ishtirok etish ko'nikmalarni oshiradi.`, summary: 'CTF musobaqalari nima?', tags: ['ctf', 'learning'] },
-    { slug: 'wireshark-qollanma', title: 'Wireshark yordamida tarmoqni tahlil qilish', category: 'Networking', content: `Wireshark tarmoq paketlarini tahlil qiluvchi dastur... U orqali muammolarni va hujumlarni aniqlash mumkin.`, summary: 'Wiresharkdan foydalanish asoslari.', tags: ['network', 'wireshark'] },
-    { slug: 'parollarni-saqlash', title: 'Parollarni xavfsiz saqlash', category: 'Cryptography', content: `Parollarni hech qachon ochiq matn ko'rinishida saqlamaslik kerak... Hashlash va salt qo'shish usullari zarur.`, summary: 'Parollarni hashlash amaliyoti.', tags: ['passwords', 'hash'] },
-    { slug: 'osint-nima', title: 'OSINT va ochiq manbalar bilan ishlash', category: 'OSINT', content: `OSINT (Open Source Intelligence) - ochiq ma'lumotlar asosida razvedka olib borish... Internetda hamma narsa bor.`, summary: 'OSINT tushunchasi.', tags: ['osint', 'recon'] },
-    { slug: 'owasp-top-10', title: 'OWASP Top 10 nima?', category: 'Web Security', content: `OWASP Top 10 eng jiddiy veb ilovalar xavflari ro'yxati... Bu standart sifatida qabul qilingan.`, summary: 'OWASP Top 10 haqida tushuncha.', tags: ['owasp', 'web'] },
+    { slug: 'xss-nima', title: 'XSS (Cross-Site Scripting) Nima?', category: 'Web Security', content: `XSS bu eng ko'p tarqalgan veb zaifliklardan biridir. Tajovuzkor veb-sahifaga zararli JavaScript kodini kiritadi va boshqa foydalanuvchilar sessiyalarini o'g'irlashi mumkin.`, summary: 'XSS hujumlariga umumiy ta\'rif va turlari.', tags: ['xss', 'web', 'security'] },
+    { slug: 'linux-fayl-huquqlari', title: 'Linux fayl huquqlari tizimi', category: 'Linux', content: `Linuxda chmod, chown kabi buyruqlar yordamida r/w/x huquqlarini boshqarish axborot xavfsizligining fundamental asosi hisoblanadi.`, summary: 'Linux ruxsatlari va xavfsizlik konfiguratsiyasi.', tags: ['linux', 'permissions'] },
+    { slug: 'sql-injection-asoslari', title: 'SQL Injection Asoslari', category: 'Web Security', content: `SQL Injection ma'lumotlar bazasi so'rovlariga ruxsatsiz kod qo'shish orqali bazadagi ma'lumotlarni o'qish, o'chirish yoki o'zgartirish imkonini beradi. Himoyalanish uchun Parametrized Queries (Prepared Statements) shart.`, summary: 'SQL Injection nima va qanday himoyalanish kerak.', tags: ['sqli', 'database'] },
+    { slug: 'nmap-bilan-tanishuv', title: 'Nmap orqali portlarni skanerlash', category: 'Networking', content: `Nmap - bu tarmoqdagi ochiq portlar, xizmat versiyalari va OS turini aniqlash bo'yicha dunyodagi eng mashhur tarmoq razvedkasi vositasidir.`, summary: 'Nmap vositasi bilan amaliy tanishuv.', tags: ['nmap', 'network'] },
+    { slug: 'kriptografiya-tarixi', title: 'Kriptografiyaning qisqacha tarixi', category: 'Cryptography', content: `Sezar shifridan tortib zamonaviy asimmetrik shifrlash (RSA, ECC) va post-kvant algoritmlarigacha bo'lgan tarixiy evolyutsiya.`, summary: 'Kriptografiya tarixi va asosiy tamoyillari.', tags: ['crypto', 'history'] },
+    { slug: 'ctf-musobaqalari', title: 'CTF Musobaqalari haqida', category: 'CTF', content: `Capture The Flag (CTF) - axborot xavfsizligi bo'yicha eng samarali sport musobaqalari bo'lib, amaliy pentest va tahlil mahoratini oshiradi.`, summary: 'CTF musobaqalari nima va qanday tayyorgarlik ko\'rish kerak.', tags: ['ctf', 'learning'] },
+    { slug: 'wireshark-qollanma', title: 'Wireshark yordamida tarmoqni tahlil qilish', category: 'Networking', content: `Wireshark real vaqtda tarmoq paketlarini tahlil qiluvchi vosita bo'lib, sniffing va anomaliyalarni topishda qo'llaniladi.`, summary: 'Wiresharkdan foydalanish asoslari.', tags: ['network', 'wireshark'] },
+    { slug: 'parollarni-saqlash', title: 'Parollarni xavfsiz saqlash', category: 'Cryptography', content: `Parollarni hech qachon ochiq saqlamang. Argon2, bcrypt kabi sekin hash funksiyalari va kriptografik tuz (salt) qo'llash majburiydir.`, summary: 'Parollarni hashlash amaliyoti va xatolar.', tags: ['passwords', 'hash'] },
+    { slug: 'osint-nima', title: 'OSINT va ochiq manbalar bilan ishlash', category: 'OSINT', content: `Open Source Intelligence (OSINT) - jamoatchilikka ochiq manbalardan razvedka ma'lumotlarini qonuniy to'plash metodologiyasidir.`, summary: 'OSINT tushunchasi va vositalari.', tags: ['osint', 'recon'] },
+    { slug: 'owasp-top-10', title: 'OWASP Top 10 nima?', category: 'Web Security', content: `OWASP Top 10 - veb ilovalardagi eng xavfli 10 ta zaiflik ro'yxati (Broken Access Control, Cryptographic Failures, Injection va b.).`, summary: 'OWASP Top 10 zamonaviy tahdidlari.', tags: ['owasp', 'web'] },
   ];
 
-  for (const article of articles) {
+  for (const a of articles) {
     const articleData = {
-      ...article,
+      title: a.title,
+      content: a.content,
+      summary: a.summary,
+      category: a.category,
+      tags: a.tags,
       difficulty: Difficulty.BEGINNER,
       readingTimeMinutes: 10,
       authorId: admin.id,
       status: ContentStatus.PUBLISHED,
     };
+
     await prisma.knowledgeArticle.upsert({
-      where: { slug: article.slug },
+      where: { slug: a.slug },
       update: articleData,
-      create: { id: crypto.randomUUID(), ...articleData }
+      create: {
+        id: crypto.randomUUID(),
+        slug: a.slug,
+        ...articleData,
+      },
     });
   }
+  console.log(`✅ Seeded ${articles.length} knowledge articles!`);
 
-  // === GLOSSARY TERMS ===
-  console.log('Seeding glossary...');
+  // ============================================================
+  // 6. GLOSSARY TERMS (30 Terms)
+  // ============================================================
+  console.log('📕 Seeding 30 Glossary Terms...');
   const terms = [
     { term: 'API', definition: 'Application Programming Interface - dasturlar o\'rtasida ma\'lumot almashish interfeysi.' },
     { term: 'BOLA', definition: 'Broken Object Level Authorization - obyekt darajasidagi ruxsatlarning buzilishi zaifligi.' },
@@ -283,43 +548,59 @@ Host: cybertrip.uz
     { term: 'XXE', definition: 'XML External Entity - XML tahlilchisiga tashqi ob\'ektlarni kiritish orqali qilinadigan hujum.' },
   ];
 
-  for (const term of terms) {
-    const slug = term.term.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  for (const t of terms) {
+    const slug = t.term.toLowerCase().replace(/[^a-z0-9]+/g, '-');
     await prisma.glossaryTerm.upsert({
-      where: { slug: slug },
-      update: { ...term, status: ContentStatus.PUBLISHED },
-      create: { id: crypto.randomUUID(), slug, ...term, status: ContentStatus.PUBLISHED }
+      where: { slug },
+      update: { ...t, status: ContentStatus.PUBLISHED },
+      create: {
+        id: crypto.randomUUID(),
+        slug,
+        ...t,
+        status: ContentStatus.PUBLISHED,
+      },
     });
   }
+  console.log(`✅ Seeded ${terms.length} glossary terms!`);
 
-  // === ACHIEVEMENTS ===
-  console.log('Seeding achievements...');
+  // ============================================================
+  // 7. ACHIEVEMENTS (15 Achievements)
+  // ============================================================
+  console.log('🏆 Seeding 15 Achievements...');
   const achievements = [
-    { code: 'first_lesson', title: 'Birinchi Qadam', description: 'First lesson completed', xpReward: 50 },
-    { code: 'first_lab', title: 'Laboratoriya Kashfiyotchisi', description: 'First lab completed', xpReward: 100 },
-    { code: 'first_ctf', title: 'CTF Jangchisi', description: 'First CTF flag', xpReward: 150 },
-    { code: 'five_labs', title: 'Laboratoriya Ustasi', description: '5 labs completed', xpReward: 200 },
-    { code: 'ten_labs', title: 'Laboratoriya Mutaxassisi', description: '10 labs completed', xpReward: 500 },
-    { code: 'twenty_five_labs', title: 'Laboratoriya Professori', description: '25 labs completed', xpReward: 1000 },
-    { code: 'streak_7', title: 'Haftalik Izchillik', description: '7 day streak', xpReward: 200 },
-    { code: 'streak_30', title: 'Oylik Izchillik', description: '30 day streak', xpReward: 1000 },
-    { code: 'hundred_lessons', title: 'Bilim Izlovchisi', description: '100 lessons completed', xpReward: 1000 },
-    { code: 'web_pentest_path', title: 'Web Pentest Yo\'li', description: 'Complete web pentest path', xpReward: 500 },
-    { code: 'first_blood', title: 'Birinchi Qon', description: 'First blood on CTF', xpReward: 300 },
-    { code: 'quiz_master', title: 'Test Ustasi', description: 'Pass 10 quizzes', xpReward: 250 },
-    { code: 'level_10', title: '10-daraja', description: 'Reach level 10', xpReward: 500 },
-    { code: 'xp_1000', title: 'Ming XP', description: 'Earn 1000 XP', xpReward: 100 },
-    { code: 'all_sqli_labs', title: 'SQL Injection Mutaxassisi', description: 'Complete all SQLi labs', xpReward: 750 },
+    { code: 'first_lesson', title: 'Birinchi Qadam', description: 'Birinchi darsni yakunlash', xpReward: 50 },
+    { code: 'first_lab', title: 'Laboratoriya Kashfiyotchisi', description: 'Birinchi laboratoriyani muvaffaqiyatli topshirish', xpReward: 100 },
+    { code: 'first_ctf', title: 'CTF Jangchisi', description: 'Birinchi CTF bayrog\'ini qo\'lga kiritish', xpReward: 150 },
+    { code: 'five_labs', title: 'Laboratoriya Ustasi', description: '5 ta laboratoriyani tamomlash', xpReward: 200 },
+    { code: 'ten_labs', title: 'Laboratoriya Mutaxassisi', description: '10 ta laboratoriyani tamomlash', xpReward: 500 },
+    { code: 'twenty_five_labs', title: 'Laboratoriya Professori', description: '25 ta laboratoriyani tamomlash', xpReward: 1000 },
+    { code: 'streak_7', title: 'Haftalik Izchillik', description: 'Ketma-ket 7 kunlik faollik zanjiri', xpReward: 200 },
+    { code: 'streak_30', title: 'Oylik Izchillik', description: 'Ketma-ket 30 kunlik faollik zanjiri', xpReward: 1000 },
+    { code: 'hundred_lessons', title: 'Bilim Izlovchisi', description: '100 ta darsni muvaffaqiyatli yakunlash', xpReward: 1000 },
+    { code: 'web_pentest_path', title: 'Web Pentest Yo\'li', description: 'Web Pentest to\'liq o\'quv yo\'lini bitirish', xpReward: 500 },
+    { code: 'first_blood', title: 'Birinchi Qon', description: 'Turnirda eng birinchi bo\'lib topshiriqni yechish', xpReward: 300 },
+    { code: 'quiz_master', title: 'Test Ustasi', description: '10 ta testdan 100% natija bilan o\'tish', xpReward: 250 },
+    { code: 'level_10', title: '10-daraja', description: '10-tajriba darajasiga erishish', xpReward: 500 },
+    { code: 'xp_1000', title: 'Ming XP', description: '1000 umumiy XP to\'plash', xpReward: 100 },
+    { code: 'all_sqli_labs', title: 'SQL Injection Mutaxassisi', description: 'Barcha SQLi laboratoriyalarini yakunlash', xpReward: 750 },
   ];
 
   for (const ach of achievements) {
     await prisma.achievement.upsert({
       where: { code: ach.code },
-      update: { ...ach },
-      create: { id: crypto.randomUUID(), ...ach }
+      update: ach,
+      create: {
+        id: crypto.randomUUID(),
+        ...ach,
+      },
     });
-  // === PLANS & SUBSCRIPTIONS ===
-  console.log('Seeding plans...');
+  }
+  console.log(`✅ Seeded ${achievements.length} achievements!`);
+
+  // ============================================================
+  // 8. SUBSCRIPTION PLANS
+  // ============================================================
+  console.log('💳 Seeding Subscription Plans...');
   const plans = [
     {
       code: 'FREE',
@@ -334,8 +615,8 @@ Host: cybertrip.uz
     },
     {
       code: 'PRO',
-      name: 'Mutaxassis (Pro)',
-      description: 'Barcha laboratoriyalar, cheksiz terminal va eksklyuziv turnirlarga to\'liq kirish',
+      name: 'Pentester (Pro)',
+      description: 'Barcha 60 ta laboratoriya, cheksiz terminal va eksklyuziv turnirlarga to\'liq kirish',
       priceMonthly: 149000,
       priceAnnual: 1490000,
       interval: 'monthly',
@@ -359,13 +640,19 @@ Host: cybertrip.uz
   for (const plan of plans) {
     await prisma.plan.upsert({
       where: { code: plan.code },
-      update: { ...plan },
-      create: { id: crypto.randomUUID(), ...plan },
+      update: plan,
+      create: {
+        id: crypto.randomUUID(),
+        ...plan,
+      },
     });
   }
+  console.log(`✅ Seeded ${plans.length} subscription plans!`);
 
-  // === TOURNAMENTS ===
-  console.log('Seeding tournaments...');
+  // ============================================================
+  // 9. TOURNAMENTS
+  // ============================================================
+  console.log('🏆 Seeding Tournaments...');
   const tournaments = [
     {
       slug: 'toshkent-kiber-qalqon-2026',
@@ -414,17 +701,21 @@ Host: cybertrip.uz
   for (const t of tournaments) {
     await prisma.tournament.upsert({
       where: { slug: t.slug },
-      update: { ...t },
-      create: { id: crypto.randomUUID(), ...t },
+      update: t,
+      create: {
+        id: crypto.randomUUID(),
+        ...t,
+      },
     });
   }
+  console.log(`✅ Seeded ${tournaments.length} tournaments!`);
 
-  console.log('Seed completed successfully!');
+  console.log('🎉 MASTER DATABASE SEEDING COMPLETED SUCCESSFULLY!');
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('❌ Error during database seed:', e);
     process.exit(1);
   })
   .finally(async () => {

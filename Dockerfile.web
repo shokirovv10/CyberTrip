@@ -1,0 +1,33 @@
+# Multi-stage production Dockerfile for @cybertrip/web (Next.js)
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy root configs & workspace manifests
+COPY package.json package-lock.json turbo.json tsconfig.base.json ./
+COPY packages/ ./packages/
+COPY apps/web/ ./apps/web/
+
+# Install dependencies and build
+RUN npm ci
+RUN npx turbo run build --filter=@cybertrip/web...
+
+# Production image
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3000
+
+COPY package.json package-lock.json ./
+COPY apps/web/package.json ./apps/web/
+
+RUN npm ci --omit=dev
+
+COPY --from=builder /app/apps/web/public/ ./apps/web/public/
+COPY --from=builder /app/apps/web/.next/ ./apps/web/.next/
+COPY --from=builder /app/packages/ ./packages/
+
+EXPOSE 3000
+
+CMD ["npx", "next", "start", "apps/web", "-p", "3000"]

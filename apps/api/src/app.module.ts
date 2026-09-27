@@ -18,6 +18,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { InstructorModule } from './modules/instructor/instructor.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { InstructorModule } from './modules/instructor/instructor.module';
     TeamsModule,
     CompaniesModule,
     InstructorModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

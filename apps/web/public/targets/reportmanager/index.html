@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReportManager — Enterprise XML Report Ingestion</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+        .brand { font-size: 20px; font-weight: 800; color: #fff; }
+        .brand span { color: var(--primary); }
+        .tag { background: rgba(99, 102, 241, 0.15); border: 1px solid var(--primary); color: #a5b4fc; font-size: 11px; padding: 3px 8px; border-radius: 4px; }
+        .box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        textarea { width: 100%; height: 160px; background: #0b1120; border: 1px solid var(--border); color: #38bdf8; font-family: monospace; padding: 12px; border-radius: 8px; font-size: 13px; outline: none; margin: 12px 0; }
+        .btn { background: var(--primary); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn:hover { background: var(--primary-hover); }
+        .result { background: #0b1120; border: 1px solid var(--border); padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; min-height: 120px; white-space: pre-wrap; color: #cbd5e1; }
+        .flag { margin-top: 14px; padding: 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); color: var(--success); font-weight: bold; border-radius: 8px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">📊 Report<span>Manager</span> Pro</div>
+        <div class="tag">XXE (XML External Entity) Training Laboratory</div>
+    </div>
+
+    <div class="box">
+        <h3 style="font-size: 16px; font-weight: 700; color: #fff;">XML Audit Hisobotini Yuklash</h3>
+        <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+            Server XML hujjatlarini qayta ishlovchi eski parserdan foydalanadi (External Entities ruxsat etilgan). <code>/secret/flag.txt</code> yoki <code>/etc/passwd</code> faylini o'qish uchun entity e'lon qiling.
+        </p>
+
+        <textarea id="xmlPayload"><?xml version="1.0" encoding="UTF-8"?>
+<report>
+    <title>Q3 Moliyaviy Tahlil</title>
+    <department>Buxgalteriya</department>
+    <summary>Barcha ko'rsatkichlar me'yorda.</summary>
+</report></textarea>
+
+        <button class="btn" onclick="parseXml()">XML Hisobotini Tahlil Qilish</button>
+    </div>
+
+    <div class="box">
+        <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 10px;">Parser Natijasi:</h4>
+        <div id="parseResult" class="result">XML kiritib 'Tahlil Qilish' tugmasini bosing...</div>
+        <div id="flagContainer" class="flag"></div>
+    </div>
+
+    <script>
+        function parseXml() {
+            const val = document.getElementById('xmlPayload').value;
+            const res = document.getElementById('parseResult');
+            const flagBox = document.getElementById('flagContainer');
+
+            const hasDoctype = val.includes('<!DOCTYPE') || val.includes('<!ENTITY');
+            const targetSecret = val.includes('/secret/flag.txt') || val.includes('flag.txt');
+            const targetPasswd = val.includes('/etc/passwd');
+
+            if (hasDoctype && targetSecret) {
+                const flag = "FLAG{xxe_xml_entity_file_exfiltrated_3319}";
+                res.innerText = `[XML Parser OK] Hisobot muvaffaqiyatli o'qildi:\n\nSarlavha: Maxfiy Audit Fayli\nMatn Tarkibi:\n----------------------------------------\n${flag}\nSERVER_MASTER_KEY=99f8a32b001\n----------------------------------------`;
+                flagBox.style.display = 'block';
+                flagBox.innerHTML = `🔥 XXE Hujumi Muvaffaqiyatli! Serverning ichki /secret/flag.txt fayli sizdirildi.<br>Flag: <strong>${flag}</strong>`;
+
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'lab_evidence',
+                        labId: 'xxe-reportmanager',
+                        evidence: {
+                            type: 'xxe_file_disclosure',
+                            payload: val,
+                            flag: flag,
+                            timestamp: new Date().toISOString()
+                        }
+                    }, '*');
+                }
+            } else if (hasDoctype && targetPasswd) {
+                res.innerText = `[XML Parser OK] Fayl o'qildi:\nroot:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nflaguser:x:1001:1001:Flag Holder:/home/flaguser:/bin/bash`;
+                flagBox.style.display = 'none';
+            } else {
+                res.innerText = `[XML Parser OK] Hisobot qabul qilindi.\nSarlavha: Tahlil muvaffaqiyatli o'tdi.\n(Tashqi entity aniqlanmadi).`;
+                flagBox.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

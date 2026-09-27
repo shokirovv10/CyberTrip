@@ -375,6 +375,45 @@ export class TerminalRuntime {
         return { output: results.slice(0, 40).join('\n'), cwd: this.vfs.cwd, completedTask: newlyCompletedTask };
       }
 
+      case 'nmap': {
+        const target = args[0] || '127.0.0.1';
+        return {
+          output: `Starting Nmap 7.94 ( https://nmap.org ) at 2026-09-27 16:30 +05\nNmap scan report for ${target}\nHost is up (0.00042s latency).\nNot shown: 996 closed tcp ports (reset)\nPORT     STATE SERVICE       VERSION\n22/tcp   open  ssh           OpenSSH 9.6p1 Ubuntu\n80/tcp   open  http          nginx 1.24.0\n4444/tcp open  krb524        Suspicious Netcat Listener (C2?)\n8080/tcp open  http-proxy    CyberBooks Web Application v1.0\n\nNmap done: 1 IP address (1 host up) scanned in 0.82 seconds`,
+          cwd: this.vfs.cwd,
+          completedTask: newlyCompletedTask,
+        };
+      }
+
+      case 'curl': {
+        const url = args.find(a => a.startsWith('http') || a.includes('.lab') || a.includes('127.0.0.1') || a.includes('localhost')) || args[0];
+        if (!url) return { output: 'curl: try \'curl --help\' for more information', cwd: this.vfs.cwd };
+        if (url.includes('4444') || url.includes('flag')) {
+          return {
+            output: `HTTP/1.1 200 OK\nServer: Cybertrip-Internal-API/1.0\nContent-Type: text/plain\n\nFLAG{terminal_recon_nmap_curl_mastery_7741}`,
+            cwd: this.vfs.cwd,
+            completedTask: newlyCompletedTask,
+          };
+        }
+        return {
+          output: `<!DOCTYPE html>\n<html>\n<head><title>CyberTrip Target Pod</title></head>\n<body>\n<h1>CyberBooks Target API</h1>\n<p>Endpoint faol. /api/v1/auth yoki /api/v1/search orqali kiring.</p>\n</body>\n</html>`,
+          cwd: this.vfs.cwd,
+          completedTask: newlyCompletedTask,
+        };
+      }
+
+      case 'netstat':
+      case 'ss':
+        return {
+          output: `Active Internet connections (only servers)\nProto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name\ntcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      482/sshd\ntcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      621/nginx\ntcp        0      0 0.0.0.0:4444            0.0.0.0:*               LISTEN      1490/nc\ntcp        0      0 127.0.0.1:8080          0.0.0.0:*               LISTEN      890/node`,
+          cwd: this.vfs.cwd,
+          completedTask: newlyCompletedTask,
+        };
+
+      case 'echo': {
+        const text = args.join(' ').replace(/['"]/g, '');
+        return { output: text, cwd: this.vfs.cwd, completedTask: newlyCompletedTask };
+      }
+
       case 'ps':
         return {
           output: `  PID TTY          TIME CMD\n    1 ?        00:00:02 systemd\n  482 ?        00:00:00 sshd\n 1205 pts/0    00:00:00 bash\n 1490 ?        00:00:01 nc (suspicious listener on :4444)\n 1520 pts/0    00:00:00 ps`,
@@ -384,7 +423,7 @@ export class TerminalRuntime {
 
       case 'help':
         return {
-          output: `Cybertrip Linux Terminal Environment v2.4\nQo'llab-quvvatlanadigan buyruqlar:\n  ls, cd, pwd, cat, grep, find, whoami, id, uname, ps, clear, history, help`,
+          output: `Cybertrip Linux Terminal Environment v2.5\nQo'llab-quvvatlanadigan buyruqlar:\n  ls, cd, pwd, cat, grep, find, nmap, curl, netstat, ps, whoami, id, uname, echo, clear, history, help`,
           cwd: this.vfs.cwd
         };
 

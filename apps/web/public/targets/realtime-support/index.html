@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realtime Support — Live Chat WebSocket Gateway</title>
+    <style>
+        :root {
+            --primary: #06b6d4;
+            --bg: #0b1120;
+            --card: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: monospace; }
+        body { background: var(--bg); color: var(--text); padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+        .brand { font-size: 18px; font-weight: bold; color: #fff; }
+        .brand span { color: var(--primary); }
+        .box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .chat-log { height: 180px; background: #020617; border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-y: auto; font-size: 12px; margin-bottom: 12px; }
+        .chat-input { display: flex; gap: 8px; }
+        input { flex: 1; background: #020617; border: 1px solid var(--border); color: #fff; padding: 8px 12px; border-radius: 6px; outline: none; font-size: 12px; }
+        .btn { background: var(--primary); color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .flag { margin-top: 14px; padding: 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981; font-weight: bold; border-radius: 8px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">💬 Realtime<span>Support</span> WS Socket (ws://support.lab)</div>
+        <div style="font-size: 11px; background: rgba(6, 182, 212, 0.15); border: 1px solid var(--primary); color: var(--primary); padding: 3px 8px; border-radius: 4px;">
+            WebSocket Frame Tampering Lab
+        </div>
+    </div>
+
+    <div class="box">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 12px; color: var(--muted);">WebSocket Ulanishi: <strong style="color: #10b981;">CONNECTED</strong></span>
+            <span style="font-size: 11px; color: var(--muted);">Protokol: ws-json-v1</span>
+        </div>
+
+        <div class="chat-log" id="chatLog">
+            <div style="color: #94a3b8;">[System]: Support agent bilan bog'landiz. Savolingizni yozing.</div>
+        </div>
+
+        <div class="chat-input">
+            <input type="text" id="wsMessage" value='{"action": "message", "text": "Salom"}' />
+            <button class="btn" onclick="sendWsFrame()">Freym Yuborish</button>
+        </div>
+        <p style="font-size: 11px; color: var(--muted); margin-top: 8px;">
+            Maslahat: JSON freymida <code>{"action": "admin_debug"}</code> yoki <code>{"role": "admin"}</code> yuboring.
+        </p>
+
+        <div id="flagBox" class="flag"></div>
+    </div>
+
+    <script>
+        function sendWsFrame() {
+            const val = document.getElementById('wsMessage').value;
+            const log = document.getElementById('chatLog');
+            const flagBox = document.getElementById('flagBox');
+
+            log.innerHTML += `<div style="color: #38bdf8;">[CLIENT &rarr; WS]: ${val}</div>`;
+
+            setTimeout(() => {
+                if (val.includes('admin_debug') || val.includes('admin') || val.includes('grant_role')) {
+                    const flag = "FLAG{websocket_raw_frame_tampering_achieved_5512}";
+                    log.innerHTML += `<div style="color: #10b981; font-weight: bold;">[WS &rarr; CLIENT]: 200 OK — Admin Sessiyasi faollashtirildi! Secret debug flag: ${flag}</div>`;
+                    flagBox.style.display = 'block';
+                    flagBox.innerHTML = `🏆 WebSocket Zaifligi Eksploitatsiya Qilindi!<br>Flag: <strong>${flag}</strong>`;
+
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({
+                            type: 'lab_evidence',
+                            labId: 'websocket-realtime-support',
+                            evidence: {
+                                type: 'websocket_frame_tampering',
+                                frame: val,
+                                flag: flag,
+                                timestamp: new Date().toISOString()
+                            }
+                        }, '*');
+                    }
+                } else {
+                    log.innerHTML += `<div style="color: #94a3b8;">[WS &rarr; CLIENT]: Agent javobi: "Xabaringiz qabul qilindi, 2 daqiqada javob beramiz."</div>`;
+                }
+                log.scrollTop = log.scrollHeight;
+            }, 300);
+        }
+    </script>
+</body>
+</html>

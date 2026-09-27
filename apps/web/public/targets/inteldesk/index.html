@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntelDesk — OSINT Threat Intelligence Recon</title>
+    <style>
+        :root {
+            --primary: #f59e0b;
+            --bg: #0c0a09;
+            --card: #1c1917;
+            --border: #292524;
+            --text: #fafaf9;
+            --muted: #a8a29e;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: monospace; }
+        body { background: var(--bg); color: var(--text); padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+        .brand { font-size: 18px; font-weight: bold; color: #fff; }
+        .brand span { color: var(--primary); }
+        .box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .btn { background: var(--primary); color: #000; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .res { background: #000; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 12px; color: #78716c; min-height: 140px; white-space: pre-wrap; margin-top: 14px; }
+        .flag { margin-top: 14px; padding: 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981; font-weight: bold; border-radius: 8px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">🛰️ Intel<span>Desk</span> Recon Platform</div>
+        <div style="font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid var(--primary); color: var(--primary); padding: 3px 8px; border-radius: 4px;">
+            OSINT & Reconnaissance Lab
+        </div>
+    </div>
+
+    <div class="box">
+        <h3 style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">Domen va Server Razvedkasi:</h3>
+        <div style="display: flex; gap: 8px;">
+            <input type="text" id="targetDomain" value="cybertrip.uz" style="flex: 1; background: #000; border: 1px solid var(--border); color: #fff; padding: 8px 12px; border-radius: 6px; outline: none;" />
+            <button class="btn" onclick="runRecon()">Subdomenlarni Aniqlash</button>
+        </div>
+
+        <div id="reconResult" class="res">Qidiruv boshlanishini kuting...</div>
+        <div id="flagBox" class="flag"></div>
+    </div>
+
+    <script>
+        function runRecon() {
+            const domain = document.getElementById('targetDomain').value.trim();
+            const res = document.getElementById('reconResult');
+            const flagBox = document.getElementById('flagBox');
+
+            res.innerText = `[OSINT Engine] '${domain}' uchun Certificate Transparency loglari tahlil qilinmoqda...\n`;
+
+            setTimeout(() => {
+                const flag = "FLAG{osint_subdomain_intel_discovered_2291}";
+                res.innerText += `
+Aniqlangan subdomenlar:
+1. www.${domain} (Cloudflare CDN)
+2. api.${domain} (Express Gateway / 8080)
+3. vpn-dev.${domain} [YASHIRIN DEV SERVIS] -> IP: 10.14.99.2
+   Whois Contact: alisher.sec@proton.me
+   Auth Header: Bearer ${flag}
+`;
+                flagBox.style.display = 'block';
+                flagBox.innerHTML = `🔎 OSINT Razvedka Muvaffaqiyatli! Yashirin vpn-dev subdomeni va flag fosh qilindi.<br>Flag: <strong>${flag}</strong>`;
+
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'lab_evidence',
+                        labId: 'osint-inteldesk',
+                        evidence: {
+                            type: 'osint_recon_success',
+                            domain: domain,
+                            flag: flag,
+                            timestamp: new Date().toISOString()
+                        }
+                    }, '*');
+                }
+            }, 500);
+        }
+    </script>
+</body>
+</html>

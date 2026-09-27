@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoiceBuilder — Dynamic PDF Invoicing Engine</title>
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --bg: #09090b;
+            --card: #18181b;
+            --border: #27272a;
+            --text: #fafafa;
+            --muted: #a1a1aa;
+            --danger: #ef4444;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+        .brand { font-size: 20px; font-weight: 800; color: #fff; }
+        .brand span { color: var(--primary); }
+        .box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        input, textarea { width: 100%; background: #000; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 13px; outline: none; margin-top: 6px; }
+        .btn { background: var(--primary); color: #000; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 12px; }
+        .preview { background: #fff; color: #18181b; padding: 24px; border-radius: 8px; margin-top: 16px; min-height: 140px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        .flag { margin-top: 14px; padding: 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--primary); color: var(--primary); font-weight: bold; border-radius: 8px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">🧾 Invoice<span>Builder</span> Engine (Jinja2)</div>
+        <div style="font-size: 11px; background: #27272a; padding: 4px 8px; border-radius: 4px; color: var(--primary);">
+            SSTI (Server-Side Template Injection) Lab
+        </div>
+    </div>
+
+    <div class="box">
+        <h3 style="font-size: 15px; font-weight: 700;">Invoys Shablonini Tahrirlash</h3>
+        <p style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+            Mijozga yuboriladigan xabarnoma shablonini kiriting. Shablon serverda Jinja2 template motori orqali to'g'ridan-to'g'ri render qilinadi.
+        </p>
+
+        <div style="margin-top: 12px;">
+            <label style="font-size: 11px; color: var(--muted);">Mijoz nomi / Template ifodasi:</label>
+            <input type="text" id="templateInput" value="Hurmatli mijoz {{ 7 * 7 }}, sizning to'lovingiz qabul qilindi." />
+        </div>
+
+        <button class="btn" onclick="renderTemplate()">Invoysni Render Qilish</button>
+    </div>
+
+    <div class="box">
+        <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Invoys Vizual Ko'rinishi (Preview):</h4>
+        <div id="renderPreview" class="preview">
+            Hurmatli mijoz 49, sizning to'lovingiz qabul qilindi.
+        </div>
+        <div id="flagContainer" class="flag"></div>
+    </div>
+
+    <script>
+        function renderTemplate() {
+            const input = document.getElementById('templateInput').value;
+            const preview = document.getElementById('renderPreview');
+            const flagBox = document.getElementById('flagContainer');
+
+            let rendered = input;
+
+            // Math expressions like {{7*7}}
+            rendered = rendered.replace(/\{\{\s*(\d+)\s*\*\s*(\d+)\s*\}\}/g, (_, a, b) => parseInt(a) * parseInt(b));
+
+            // SSTI RCE or config disclosure
+            if (
+                input.includes('__globals__') || 
+                input.includes('config') || 
+                input.includes('os.popen') || 
+                input.includes('flag') || 
+                input.includes('popen')
+            ) {
+                const flag = "FLAG{ssti_template_injection_rce_unlocked_7781}";
+                preview.innerHTML = `
+                    <div style="border-bottom: 2px solid #e4e4e7; padding-bottom: 12px; margin-bottom: 12px;">
+                        <h2 style="color: #059669; font-size: 18px;">INVOICE #INV-2026-9921</h2>
+                        <span style="font-size: 12px; color: #71717a;">Rendered via Python Jinja2 Engine [RCE Triggered]</span>
+                    </div>
+                    <pre style="background: #18181b; color: #34d399; padding: 12px; border-radius: 6px; font-size: 12px; overflow-x: auto;">uid=1001(flask) gid=1001(flask)\nLinux production-invoice 5.15.0 #1 SMP\n${flag}</pre>
+                `;
+                flagBox.style.display = 'block';
+                flagBox.innerHTML = `⚡ SSTI Zaifligi Aniqlashdi! Shablon motori orqali serverda ixtiyoriy buyruq (RCE) bajarildi.<br>Flag: <strong>${flag}</strong>`;
+
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'lab_evidence',
+                        labId: 'ssti-invoicebuilder',
+                        evidence: {
+                            type: 'ssti_rce_execution',
+                            payload: input,
+                            flag: flag,
+                            timestamp: new Date().toISOString()
+                        }
+                    }, '*');
+                }
+            } else {
+                preview.innerText = rendered;
+                flagBox.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OrderHub Enterprise — Logistics & Invoicing Portal</title>
+    <style>
+        :root {
+            --primary: #f59e0b;
+            --primary-dark: #d97706;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+        .brand { font-size: 20px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .brand span { color: var(--primary); }
+        .user-tag { font-size: 12px; background: #334155; padding: 4px 10px; rounded-full; border-radius: 20px; color: var(--text-muted); }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .title { font-size: 16px; font-weight: 700; margin-bottom: 12px; color: #fff; }
+        .order-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+        .order-table th { background: #0f172a; padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+        .order-table td { padding: 12px; border-bottom: 1px solid var(--border); }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        .badge-success { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+        .badge-warning { background: rgba(245, 158, 11, 0.15); color: var(--primary); }
+        .btn { background: var(--primary); color: #000; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .btn:hover { background: var(--primary-dark); }
+        .viewer { background: #0b1120; border: 1px dashed var(--border); border-radius: 8px; padding: 16px; margin-top: 16px; }
+        .url-bar { display: flex; gap: 8px; background: #0f172a; border: 1px solid var(--border); padding: 8px; border-radius: 8px; margin-bottom: 16px; font-size: 12px; }
+        .url-bar input { background: transparent; border: none; color: #38bdf8; font-family: monospace; width: 100%; outline: none; }
+        .flag-box { margin-top: 16px; padding: 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid var(--success); border-radius: 8px; color: var(--success); font-family: monospace; font-size: 13px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">📦 Order<span>Hub</span> Enterprise</div>
+        <div class="user-tag">Kirilgan: client_salimov (Oddiy Mijoz)</div>
+    </div>
+
+    <div class="card">
+        <div class="title">BOLA / IDOR Sinov Paneli: Buyurtmalar Ko'rish API</div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+            Siz faqat o'zingizning buyurtmalaringizni (ID: 501, 502) ko'rishingiz kerak. Biroq API so'rovidagi parametr (orderId) server tomonida tekshirilmaydi.
+        </p>
+
+        <div class="url-bar">
+            <span style="color: var(--text-muted);">GET /api/v1/orders/</span>
+            <input type="text" id="orderIdInput" value="501" />
+            <button class="btn" onclick="fetchOrder()">Yuklash</button>
+        </div>
+
+        <table class="order-table">
+            <thead>
+                <tr>
+                    <th>Buyurtma ID</th>
+                    <th>Mahsulot</th>
+                    <th>Summa</th>
+                    <th>Holat</th>
+                    <th>Amal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-family: monospace;">#ORD-501</td>
+                    <td>Server Rack Cable 10m</td>
+                    <td>145,000 UZS</td>
+                    <td><span class="badge badge-success">Yetkazildi</span></td>
+                    <td><button class="btn" onclick="viewOrder(501)">Ko'rish</button></td>
+                </tr>
+                <tr>
+                    <td style="font-family: monospace;">#ORD-502</td>
+                    <td>RJ-45 Crimping Tool Pro</td>
+                    <td>85,000 UZS</td>
+                    <td><span class="badge badge-warning">Yo'lda</span></td>
+                    <td><button class="btn" onclick="viewOrder(502)">Ko'rish</button></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div id="orderViewer" class="viewer">
+            <div style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">Buyurtma Tafsilotlari: <span id="viewId">#ORD-501</span></div>
+            <div id="orderDetails" style="font-size: 12px; color: var(--text-muted); line-height: 1.8;">
+                Yuklanmoqda...
+            </div>
+            <div id="flagContainer" style="display: none;" class="flag-box"></div>
+        </div>
+    </div>
+
+    <script>
+        const ordersDb = {
+            "501": { client: "client_salimov", item: "Server Rack Cable 10m", price: "145,000 UZS", dest: "Toshkent, Chilonzor 4", sensitive: false },
+            "502": { client: "client_salimov", item: "RJ-45 Crimping Tool Pro", price: "85,000 UZS", dest: "Toshkent, Chilonzor 4", sensitive: false },
+            "100": { client: "superadmin_gov", item: "Maxfiy Kriptografik HSM Modul v4", price: "148,000,000 UZS", dest: "Maxfiy Saqlash Markazi #01", sensitive: true, flag: "FLAG{bola_broken_object_auth_leaked_9941}" },
+            "101": { client: "director_general", item: "Korporativ Master Token Kartasi", price: "12,500,000 UZS", dest: "Bosh Bino, VIP", sensitive: true, flag: "FLAG{bola_privilege_escalation_success_7721}" }
+        };
+
+        function fetchOrder() {
+            const id = document.getElementById('orderIdInput').value.trim();
+            viewOrder(id);
+        }
+
+        function viewOrder(id) {
+            document.getElementById('orderIdInput').value = id;
+            document.getElementById('viewId').innerText = `#ORD-${id}`;
+            const details = document.getElementById('orderDetails');
+            const flagBox = document.getElementById('flagContainer');
+
+            if (ordersDb[id]) {
+                const o = ordersDb[id];
+                details.innerHTML = `
+                    <div>Buyurtmachi: <strong>${o.client}</strong></div>
+                    <div>Nomi: <strong>${o.item}</strong></div>
+                    <div>Narx: <strong>${o.price}</strong></div>
+                    <div>Yetkazish manzili: <strong>${o.dest}</strong></div>
+                `;
+
+                if (o.sensitive) {
+                    flagBox.style.display = 'block';
+                    flagBox.innerHTML = `🚨 BOLA/IDOR Zaifligi Aniqlashdi! Boshqa shaxsning maxfiy hujjati fosh bo'ldi.<br>Maxfiy Flag: <strong>${o.flag}</strong>`;
+
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({
+                            type: 'lab_evidence',
+                            labId: 'idor-orderhub',
+                            evidence: {
+                                type: 'bola_order_leak',
+                                orderId: id,
+                                flag: o.flag,
+                                timestamp: new Date().toISOString()
+                            }
+                        }, '*');
+                    }
+                } else {
+                    flagBox.style.display = 'none';
+                }
+            } else {
+                details.innerHTML = `<span style="color: var(--danger);">Xatolik: #ORD-${id} topilmadi. 100 yoki 101 ID raqamlarini tekshirib ko'ring.</span>`;
+                flagBox.style.display = 'none';
+            }
+        }
+
+        viewOrder(501);
+    </script>
+</body>
+</html>

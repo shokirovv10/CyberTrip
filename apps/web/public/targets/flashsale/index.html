@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlashSale — Ultra Fast Discount Portal</title>
+    <style>
+        :root {
+            --primary: #10b981;
+            --bg: #064e3b;
+            --card: #022c22;
+            --border: #047857;
+            --text: #ecfdf5;
+            --muted: #6ee7b7;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: monospace; }
+        body { background: #021f18; color: var(--text); padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+        .brand { font-size: 20px; font-weight: 800; color: #fff; }
+        .brand span { color: var(--primary); }
+        .box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .btn { background: var(--primary); color: #000; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-attack { background: #f59e0b; color: #000; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .log { background: #01140f; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 12px; min-height: 120px; white-space: pre-wrap; margin-top: 14px; }
+        .flag { margin-top: 14px; padding: 12px; background: rgba(16, 185, 129, 0.2); border: 1px solid var(--primary); color: #34d399; font-weight: bold; border-radius: 6px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">⚡ Flash<span>Sale</span> Voucher Engine</div>
+        <div style="background: rgba(16, 185, 129, 0.2); padding: 4px 8px; border-radius: 4px; color: var(--primary);">
+            Race Condition (Concurrency) Lab
+        </div>
+    </div>
+
+    <div class="box">
+        <h3 style="font-size: 15px; font-weight: bold;">Bir Martalik Promo-Kodni Faollashtirish</h3>
+        <p style="font-size: 12px; color: var(--muted); margin: 8px 0;">
+            Kupon kodi: <code>PROMO-2026-ONCE</code> (Faqat 1 marta ishlatilishi kerak, har birida 200,000 UZS chegirma beradi).<br>
+            Serverda <strong>Time-of-Check to Time-of-Use (TOCTOU)</strong> zaifligi mavjud.
+        </p>
+
+        <div style="display: flex; gap: 10px; margin-top: 12px;">
+            <button class="btn" onclick="redeemSingle()">Oddiy So'rov (1 ta so'rov)</button>
+            <button class="btn-attack" onclick="redeemConcurrent()">Parallel Hujum (10 ta bir vaqtda so'rov)</button>
+        </div>
+
+        <div class="log" id="logOut">Hujum natijalarini kuting...</div>
+        <div class="flag" id="flagBox"></div>
+    </div>
+
+    <script>
+        let redeemedCount = 0;
+        let isProcessing = false;
+
+        async function redeemSingle() {
+            const log = document.getElementById('logOut');
+            if (redeemedCount >= 1) {
+                log.innerText = `[Server 400] Bu kod allaqachon ishlatilgan! Qayta ishlatish mumkin emas.`;
+                return;
+            }
+            redeemedCount++;
+            log.innerText = `[Server 200 OK] Kupon muvaffaqiyatli qo'llandi! Chegirma: 200,000 UZS (Jami: ${redeemedCount} marta).`;
+        }
+
+        async function redeemConcurrent() {
+            const log = document.getElementById('logOut');
+            const flagBox = document.getElementById('flagBox');
+            log.innerText = "10 ta parallel so'rov bir millisekundda serverga yuborilmoqda...\n";
+
+            // Simulate race condition window of vulnerability
+            redeemedCount = 0;
+            const promises = Array(10).fill(null).map(async (_, idx) => {
+                await new Promise(r => setTimeout(r, Math.random() * 30));
+                redeemedCount++;
+                return `Request #${idx + 1}: 200 OK (Check passed before commit)`;
+            });
+
+            const results = await Promise.all(promises);
+            log.innerText += results.join('\n');
+            log.innerText += `\n\nNatija: Bir martalik kupon bir vaqtda ${redeemedCount} marta faollashtirildi!`;
+
+            if (redeemedCount >= 5) {
+                const flag = "FLAG{race_condition_limit_overrun_exploited_4492}";
+                flagBox.style.display = 'block';
+                flagBox.innerHTML = `🚨 Race Condition Muvaffaqiyatli! Server parallel so'rovlarni bloklay olmadi.<br>Flag: <strong>${flag}</strong>`;
+
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'lab_evidence',
+                        labId: 'race-condition-flashsale',
+                        evidence: {
+                            type: 'race_condition_limit_overrun',
+                            solvesCount: redeemedCount,
+                            flag: flag,
+                            timestamp: new Date().toISOString()
+                        }
+                    }, '*');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

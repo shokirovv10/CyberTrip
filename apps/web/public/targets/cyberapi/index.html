@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberAPI — REST Gateway & JWT Inspector</title>
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --bg: #090d16;
+            --card: #111827;
+            --border: #1f2937;
+            --cyan: #06b6d4;
+            --success: #10b981;
+            --danger: #ef4444;
+            --text: #f9fafb;
+            --muted: #9ca3af;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: monospace; }
+        body { background: var(--bg); color: var(--text); padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+        .brand { font-size: 18px; font-weight: bold; color: #fff; }
+        .brand span { color: var(--primary); }
+        .tag { background: rgba(139, 92, 246, 0.15); border: 1px solid var(--primary); color: var(--primary); font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .box { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+        .title { font-size: 13px; font-weight: bold; color: var(--cyan); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        textarea { width: 100%; height: 110px; background: #030712; border: 1px solid var(--border); color: #e2e8f0; padding: 10px; border-radius: 6px; font-size: 12px; resize: none; outline: none; }
+        textarea:focus { border-color: var(--primary); }
+        .btn { background: var(--primary); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; margin-top: 10px; width: 100%; }
+        .btn:hover { background: var(--primary-hover); }
+        .out { background: #030712; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 12px; min-height: 150px; overflow-x: auto; color: #94a3b8; }
+        .flag { margin-top: 12px; padding: 12px; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); color: var(--success); font-weight: bold; border-radius: 6px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">⚡ Cyber<span>API</span> Gateway Console (v2.4)</div>
+        <div class="tag">JWT Algorithm None / Signature Bypass Lab</div>
+    </div>
+
+    <div class="grid">
+        <div class="box">
+            <div class="title">
+                <span>1. Autentifikatsiya Tokeni (Bearer JWT)</span>
+                <span style="font-size: 10px; color: var(--muted);">oddiy talaba tokeni berilgan</span>
+            </div>
+            <textarea id="jwtInput">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ1c2VyLTEwMiIsInVzZXJuYW1lIjoidGFsYWJhIiwicm9sZSI6InN0dWRlbnQiLCJpYXQiOjE2OTk5OTk5OTl9.signature_hash_goes_here</textarea>
+            
+            <p style="font-size: 11px; color: var(--muted); margin-top: 8px;">
+                Maslahat: JWT headeridagi <code>"alg": "none"</code> ga o'zgartiring va payload ichidagi <code>"role": "superadmin"</code> qilib imzoni olib tashlang.
+            </p>
+
+            <button class="btn" onclick="sendApiRequest()">Yuborish: POST /api/v1/admin/vault</button>
+        </div>
+
+        <div class="box">
+            <div class="title">2. Gateway Javobi (Response Output)</div>
+            <div id="output" class="out">So'rov yuborilishini kutyapti...</div>
+            <div id="flagContainer" class="flag"></div>
+        </div>
+    </div>
+
+    <script>
+        function sendApiRequest() {
+            const token = document.getElementById('jwtInput').value.trim();
+            const out = document.getElementById('output');
+            const flagBox = document.getElementById('flagContainer');
+
+            const parts = token.split('.');
+            if (parts.length < 2) {
+                out.innerHTML = `<span style="color: var(--danger);">HTTP 400 Bad Request: Yaroqsiz JWT formati. 3 ta bo'lak bo'lishi kerak.</span>`;
+                flagBox.style.display = 'none';
+                return;
+            }
+
+            try {
+                let header = {};
+                let payload = {};
+                try {
+                    header = JSON.parse(atob(parts[0]));
+                    payload = JSON.parse(atob(parts[1]));
+                } catch(e) {
+                    header = {};
+                    payload = {};
+                }
+
+                const isAlgNone = header.alg && header.alg.toLowerCase() === 'none';
+                const isSuperAdmin = payload.role === 'superadmin' || payload.role === 'admin';
+
+                if (isAlgNone && isSuperAdmin) {
+                    const flag = "FLAG{jwt_algorithm_none_signature_bypass_8842}";
+                    out.innerHTML = `<span style="color: var(--success);">HTTP 200 OK: Autentifikatsiya muvaffaqiyatli! Superadmin huquqlari berildi.</span>
+<br><br>
+{
+  "status": "AUTHORIZED",
+  "granted_role": "SUPERADMIN",
+  "secret_vault_id": "VAULT-SEC-9988",
+  "flag": "${flag}"
+}`;
+                    flagBox.style.display = 'block';
+                    flagBox.innerHTML = `🏆 JWT None Zaifligi Eksploitatsiya Qilindi!<br>Flag: <strong>${flag}</strong>`;
+
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({
+                            type: 'lab_evidence',
+                            labId: 'jwt-cyberapi',
+                            evidence: {
+                                type: 'jwt_alg_none_bypass',
+                                payload: token,
+                                flag: flag,
+                                timestamp: new Date().toISOString()
+                            }
+                        }, '*');
+                    }
+                } else if (!isSuperAdmin) {
+                    out.innerHTML = `<span style="color: #f59e0b;">HTTP 403 Forbidden: Foydalanuvchi roli 'student'. Faqat 'superadmin' ruxsat etiladi.</span>
+<br><br>
+{
+  "error": "INSUFFICIENT_PRIVILEGES",
+  "current_role": "${payload.role || 'unknown'}"
+}`;
+                    flagBox.style.display = 'none';
+                } else {
+                    out.innerHTML = `<span style="color: var(--danger);">HTTP 401 Unauthorized: JWT imzosi noto'g'ri. Algoritm 'none' qilib tekshirilganmi?</span>`;
+                    flagBox.style.display = 'none';
+                }
+            } catch(err) {
+                out.innerText = "Xatolik: Token tahlil qilinmadi.";
+                flagBox.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -58,32 +58,87 @@ export default function LabSessionPage({ params }: { params: Promise<{ labSlug: 
 
   // Determine lab configuration based on slug
   const getLabConfig = () => {
+    let targetUrl = '/targets/cyberbooks/index.html';
+    let mockAddress = 'http://target-cyberbooks.lab:8080/login';
+    let availableRoutes: string[] = ['/login'];
+
     const labDef = getLabBySlug(slug);
     if (labDef) {
-      let targetUrl = '/targets/cyberbooks/index.html';
-      let mockAddress = 'http://target-cyberbooks.lab:8080';
-      let availableRoutes = [labDef.entryPoint, '/login', '/search', '/admin'];
+      const app = (labDef.targetApp || '').toLowerCase();
+      const cat = labDef.category || '';
 
-      if (labDef.targetApp.toLowerCase().includes('forum')) {
+      if (app.includes('order') || (cat === 'IDOR' && app.includes('order'))) {
+        targetUrl = '/targets/orderhub/index.html';
+        mockAddress = 'http://orderhub.enterprise.lab:8080' + labDef.entryPoint;
+        availableRoutes = ['/orders', '/invoices', '/checkout', '/api/v1/orders'];
+      } else if (app.includes('api') || cat === 'JWT' || cat === 'API_SECURITY') {
+        targetUrl = '/targets/cyberapi/index.html';
+        mockAddress = 'http://api-gateway.lab:8000' + labDef.entryPoint;
+        availableRoutes = ['/api/v1/auth/token', '/api/v1/admin/vault', '/api/v1/keys'];
+      } else if (app.includes('report') || cat === 'XXE') {
+        targetUrl = '/targets/reportmanager/index.html';
+        mockAddress = 'http://reportmanager.corp.internal' + labDef.entryPoint;
+        availableRoutes = ['/reports/upload', '/reports/audit', '/api/xml/ingest'];
+      } else if (app.includes('invoice') || cat === 'SSTI') {
+        targetUrl = '/targets/invoicebuilder/index.html';
+        mockAddress = 'http://invoicebuilder.service.lab' + labDef.entryPoint;
+        availableRoutes = ['/templates/preview', '/invoices/generate', '/templates/editor'];
+      } else if (app.includes('file') || cat === 'PATH_TRAVERSAL') {
+        targetUrl = '/targets/filemanager/index.html';
+        mockAddress = 'http://filemanager.storage.lab' + labDef.entryPoint;
+        availableRoutes = ['/files', '/view', '/download', '/logs'];
+      } else if (app.includes('shop') || cat === 'BUSINESS_LOGIC') {
+        targetUrl = '/targets/shopflow/index.html';
+        mockAddress = 'http://shopflow.store.lab' + labDef.entryPoint;
+        availableRoutes = ['/cart', '/checkout', '/products', '/coupon'];
+      } else if (app.includes('flash') || cat === 'RACE_CONDITION') {
+        targetUrl = '/targets/flashsale/index.html';
+        mockAddress = 'http://flashsale.deal.lab' + labDef.entryPoint;
+        availableRoutes = ['/coupon/redeem', '/flash/deals', '/api/v1/concurrency'];
+      } else if (app.includes('graphql') || cat === 'GRAPHQL') {
+        targetUrl = '/targets/graphql-lab/index.html';
+        mockAddress = 'http://graphql-engine.lab/graphql';
+        availableRoutes = ['/graphql', '/schema', '/explorer'];
+      } else if (app.includes('support') || app.includes('realtime') || cat === 'WEBSOCKET') {
+        targetUrl = '/targets/realtime-support/index.html';
+        mockAddress = 'ws://support-gateway.lab/chat';
+        availableRoutes = ['/chat', '/support/ticket', '/ws/stream'];
+      } else if (app.includes('auth') || cat === 'AUTHENTICATION') {
+        targetUrl = '/targets/secureauth/index.html';
+        mockAddress = 'https://secureauth.corp/login';
+        availableRoutes = ['/login', '/login/2fa', '/auth/reset'];
+      } else if (app.includes('case') || cat === 'FORENSICS') {
+        targetUrl = '/targets/cybercase/index.html';
+        mockAddress = 'http://cybercase.dfir.lab/cases';
+        availableRoutes = ['/cases/evidence', '/logs/analyzer', '/pcap/dump'];
+      } else if (app.includes('intel') || cat === 'OSINT') {
+        targetUrl = '/targets/inteldesk/index.html';
+        mockAddress = 'http://inteldesk.recon.lab/intel';
+        availableRoutes = ['/search/intel', '/whois', '/subdomains'];
+      } else if (app.includes('vault') || app.includes('media') || cat === 'FILE_UPLOAD') {
+        targetUrl = '/targets/mediavault/index.html';
+        mockAddress = 'http://mediavault.cloud.lab/upload';
+        availableRoutes = ['/upload', '/gallery', '/files'];
+      } else if (app.includes('preview') || cat === 'SSRF') {
+        targetUrl = '/targets/sitepreview/index.html';
+        mockAddress = 'http://sitepreview.utility.lab/preview';
+        availableRoutes = ['/preview', '/fetch', '/curl'];
+      } else if (app.includes('forum') || cat === 'XSS' || cat === 'CSRF' || cat === 'CORS') {
         targetUrl = '/targets/cyberforum/index.html';
-        mockAddress = 'http://cyberforum.lab:8080';
-        availableRoutes = ['/', '/comments', '/profile', '/search', '/login', '/admin'];
-      } else if (labDef.targetApp.toLowerCase().includes('docs') || labDef.category === 'IDOR') {
-        targetUrl = '/targets/securedocs/index.html';
-        mockAddress = 'https://securedocs.corp/api/v1';
-        availableRoutes = ['/documents', '/profile', '/settings', '/download'];
-      } else if (labDef.targetApp.toLowerCase().includes('diagnostic') || labDef.category === 'COMMAND_INJECTION') {
+        mockAddress = 'http://cyberforum.lab:8080' + labDef.entryPoint;
+        availableRoutes = ['/comments', '/profile', '/search', '/login', '/admin'];
+      } else if (app.includes('diagnostic') || cat === 'COMMAND_INJECTION') {
         targetUrl = '/targets/diagnosticpanel/index.html';
-        mockAddress = 'http://diagnostics.internal.server';
+        mockAddress = 'http://diagnostics.internal.server' + labDef.entryPoint;
         availableRoutes = ['/ping', '/traceroute', '/dns', '/system-status'];
-      } else if (labDef.category === 'LINUX') {
-        targetUrl = '/targets/cyberbooks/index.html';
-        mockAddress = 'ssh kali@cybertrip-linux-range:22';
-        availableRoutes = ['Terminal', '/var/log', '/etc/passwd'];
+      } else if (app.includes('doc') || cat === 'IDOR') {
+        targetUrl = '/targets/securedocs/index.html';
+        mockAddress = 'https://securedocs.corp/api/v1' + labDef.entryPoint;
+        availableRoutes = ['/documents', '/profile', '/settings', '/download'];
       } else {
         targetUrl = '/targets/cyberbooks/index.html';
-        mockAddress = `http://${labDef.targetApp.toLowerCase()}.lab:8080`;
-        availableRoutes = [labDef.entryPoint, '/search', '/login', '/admin'];
+        mockAddress = 'http://target-cyberbooks.lab:8080' + labDef.entryPoint;
+        availableRoutes = [labDef.entryPoint, '/login', '/search', '/books', '/admin'];
       }
 
       return {
@@ -390,7 +445,7 @@ export default function LabSessionPage({ params }: { params: Promise<{ labSlug: 
                 {/* Dynamic Route Switcher Tabs */}
                 <div className="flex items-center space-x-1 bg-gray-950 p-1 rounded-lg border border-gray-800 text-[11px]">
                   <Compass className="w-3 h-3 text-cyan-400 ml-1 mr-0.5" />
-                  {labConfig.availableRoutes.map((route) => (
+                  {labConfig.availableRoutes.map((route: string) => (
                     <button
                       key={route}
                       onClick={() => {
