@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { 
   ChevronLeft, ChevronRight, CheckCircle2, PlayCircle, Trophy, 
   List, X, Shield, Terminal, BookOpen, AlertTriangle, Code, 
@@ -14,10 +15,14 @@ import { getLabBySlug, LABS_DATA } from '@/lib/labs-data';
 export default function LessonViewerPage({ 
   params 
 }: { 
-  params: any 
+  params?: { pathSlug?: string; courseSlug?: string; moduleSlug?: string; lessonSlug?: string } 
 }) {
-  const resolvedParams: { pathSlug: string; courseSlug: string; moduleSlug: string; lessonSlug: string } =
-    params && typeof (params as any)?.then === 'function' ? use(params as any) : (params || {});
+  const routeParams = useParams();
+  const pathSlug = (routeParams?.pathSlug as string) || params?.pathSlug || 'web-pentest';
+  const courseSlug = (routeParams?.courseSlug as string) || params?.courseSlug || 'http-web-architecture';
+  const moduleSlug = (routeParams?.moduleSlug as string) || params?.moduleSlug || '';
+  const lessonSlug = (routeParams?.lessonSlug as string) || params?.lessonSlug || '';
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<'theory' | 'quiz' | 'practice' | 'lab'>('theory');
   const [isCompleted, setIsCompleted] = useState(false);
@@ -33,10 +38,18 @@ export default function LessonViewerPage({
   const [practiceVerified, setPracticeVerified] = useState(false);
   const [practiceError, setPracticeError] = useState<string | null>(null);
 
-  const path = CURRICULUM_DATA[resolvedParams.pathSlug] || CURRICULUM_DATA['web-pentest'];
-  const course = path.courses.find((c) => c.slug === resolvedParams.courseSlug) || path.courses[0];
-  const currentModule = course.modules.find((m) => m.slug === resolvedParams.moduleSlug) || course.modules[0];
-  const currentLesson: LessonData = currentModule.lessons.find((l) => l.slug === resolvedParams.lessonSlug) || currentModule.lessons[0];
+  const path = CURRICULUM_DATA[pathSlug] || CURRICULUM_DATA['web-pentest'];
+  const course = path?.courses?.find((c) => c.slug === courseSlug) || path?.courses?.[0];
+  const currentModule = course?.modules?.find((m) => m.slug === moduleSlug) || course?.modules?.[0];
+  const currentLesson: LessonData = currentModule?.lessons?.find((l) => l.slug === lessonSlug) || currentModule?.lessons?.[0] || {
+    id: 'unknown',
+    slug: 'intro',
+    title: 'Dars mazmuni yuklanmoqda',
+    durationMinutes: 15,
+    xp: 50,
+    hasQuiz: false,
+    content: 'Dars ma\'lumotlari yuklanmoqda...'
+  };
 
   // Resolve linked lab
   const linkedLab = getLabBySlug(currentLesson.linkedLabSlug || 'sqli-login') || LABS_DATA[0];

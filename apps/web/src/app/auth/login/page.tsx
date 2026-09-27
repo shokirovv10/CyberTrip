@@ -92,9 +92,9 @@ function LoginForm() {
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-gray-300 font-semibold">Parol</label>
-            <span className="text-[11px] text-cyan-400 hover:underline cursor-pointer">
+            <Link href="/auth/forgot-password" className="text-[11px] text-cyan-400 hover:underline">
               Parolni unutdingizmi?
-            </span>
+            </Link>
           </div>
           <div className="relative">
             <Lock className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />

@@ -1,18 +1,28 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { 
   ChevronRight, PlayCircle, CheckCircle2, Lock, Terminal, 
   ArrowLeft, Clock, BookOpen, Award, ArrowRight, Shield 
 } from 'lucide-react';
 import { CURRICULUM_DATA } from '@/lib/curriculum-data';
 
-export default function CourseDetailPage({ params }: { params: any }) {
-  const resolvedParams: { pathSlug: string; courseSlug: string } =
-    params && typeof (params as any)?.then === 'function' ? use(params as any) : (params || {});
-  const path = CURRICULUM_DATA[resolvedParams.pathSlug] || CURRICULUM_DATA['web-pentest'];
-  const course = path.courses.find((c) => c.slug === resolvedParams.courseSlug) || path.courses[0];
+export default function CourseDetailPage({ params }: { params?: { pathSlug?: string; courseSlug?: string } }) {
+  const routeParams = useParams();
+  const pathSlug = (routeParams?.pathSlug as string) || params?.pathSlug || 'web-pentest';
+  const courseSlug = (routeParams?.courseSlug as string) || params?.courseSlug || '';
+  const path = CURRICULUM_DATA[pathSlug] || CURRICULUM_DATA['web-pentest'];
+  const course = path?.courses?.find((c) => c.slug === courseSlug) || path?.courses?.[0] || {
+    id: 'unknown',
+    slug: 'http-web-architecture',
+    title: 'HTTP va Web Arxitekturasi',
+    level: 'BOSHLANG\'ICH',
+    hours: 8,
+    description: 'Web ilovalar xavfsizligi asoslari',
+    modules: []
+  };
 
   const [openModuleIndex, setOpenModuleIndex] = useState<number>(0);
 

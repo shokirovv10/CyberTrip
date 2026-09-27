@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, use } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { 
   Shield, Send, Hash, Users, Lock, ArrowLeft, Code, Paperclip, 
   Smile, MoreVertical, CheckCircle2, MessageSquare, Terminal, 
@@ -19,10 +20,9 @@ interface ChatMessage {
   isSelf?: boolean;
 }
 
-export default function TeamChatPage({ params }: { params: any }) {
-  const resolvedParams: { slug: string } =
-    params && typeof (params as any)?.then === 'function' ? use(params as any) : (params || {});
-  const slug = resolvedParams?.slug || '';
+export default function TeamChatPage({ params }: { params?: { slug?: string } }) {
+  const routeParams = useParams();
+  const slug = (routeParams?.slug as string) || params?.slug || 'cyber-dragons';
 
   const [activeChannel, setActiveChannel] = useState('umumiy-strategiya');
   const [inputText, setInputText] = useState('');

@@ -6,8 +6,9 @@ import {
 } from 'lucide-react';
 import { CURRICULUM_DATA } from '@/lib/curriculum-data';
 
-export default async function LearningPathPage({ params }: { params: Promise<{ pathSlug: string }> }) {
-  const { pathSlug } = await params;
+export default async function LearningPathPage({ params }: { params: { pathSlug: string } | Promise<{ pathSlug: string }> }) {
+  const resolved = await Promise.resolve(params);
+  const pathSlug = resolved?.pathSlug || 'web-pentest';
   const path = CURRICULUM_DATA[pathSlug] || CURRICULUM_DATA['web-pentest'];
 
   if (!path) {

@@ -2,11 +2,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Flag, Download, AlertCircle, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
-import { use } from 'react';
+import { useParams } from 'next/navigation';
 
-export default function CTFChallengePage({ params }: { params: any }) {
-  const resolvedParams: { id: string } =
-    params && typeof (params as any)?.then === 'function' ? use(params as any) : (params || {});
+export default function CTFChallengePage({ params }: { params?: { id?: string } }) {
+  const routeParams = useParams();
+  const id = (routeParams?.id as string) || params?.id || '1';
   const [flag, setFlag] = useState('');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [showHint, setShowHint] = useState(false);

@@ -9,9 +9,10 @@ import { getLabBySlug, LABS_DATA } from '@/lib/labs-data';
 export default async function LabBriefingPage({ 
   params 
 }: { 
-  params: Promise<{ labSlug: string }> 
+  params: { labSlug: string } | Promise<{ labSlug: string }> 
 }) {
-  const { labSlug } = await params;
+  const resolved = await Promise.resolve(params);
+  const labSlug = resolved?.labSlug || 'sqli-login';
   const lab = getLabBySlug(labSlug) || LABS_DATA[0];
 
   const getDiffBadge = (diff: string) => {

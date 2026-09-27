@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, use } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { 
   Terminal, Shield, Clock, CheckCircle2, RotateCcw, Send, Play, Globe, 
   ExternalLink, AlertTriangle, Award, RefreshCw, ChevronRight, BookOpen, 
@@ -28,10 +29,9 @@ interface Hint {
   unlocked: boolean;
 }
 
-export default function LabSessionPage({ params }: { params: any }) {
-  const resolvedParams: { labSlug: string } =
-    params && typeof (params as any)?.then === 'function' ? use(params as any) : (params || {});
-  const slug = resolvedParams?.labSlug || '';
+export default function LabSessionPage({ params }: { params?: { labSlug?: string } }) {
+  const routeParams = useParams();
+  const slug = (routeParams?.labSlug as string) || params?.labSlug || 'sqli-login';
 
   const [activeTab, setActiveTab] = useState<'app' | 'terminal' | 'briefing' | 'review'>('app');
   const [timeLeft, setTimeLeft] = useState(45 * 60);

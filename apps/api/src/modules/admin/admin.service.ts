@@ -369,4 +369,231 @@ export class AdminService {
       },
     };
   }
+
+  async getLabs(page = 1, limit = 50) {
+    const skip = (page - 1) * limit;
+    const [total, labs] = await Promise.all([
+      this.prisma.lab.count(),
+      this.prisma.lab.findMany({
+        skip,
+        take: limit,
+        orderBy: { order: 'asc' },
+        include: {
+          _count: {
+            select: {
+              sessions: true,
+              submissions: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: labs,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getChallenges(page = 1, limit = 50) {
+    const skip = (page - 1) * limit;
+    const [total, challenges] = await Promise.all([
+      this.prisma.cTFChallenge.count(),
+      this.prisma.cTFChallenge.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'asc' },
+        include: {
+          _count: {
+            select: {
+              submissions: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: challenges,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getCourses(page = 1, limit = 50) {
+    const skip = (page - 1) * limit;
+    const [total, courses] = await Promise.all([
+      this.prisma.course.count(),
+      this.prisma.course.findMany({
+        skip,
+        take: limit,
+        orderBy: { order: 'asc' },
+        include: {
+          learningPath: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+            },
+          },
+          _count: {
+            select: {
+              modules: true,
+              userProgress: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: courses,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getCertificates(page = 1, limit = 50) {
+    const skip = (page - 1) * limit;
+    const [total, certificates] = await Promise.all([
+      this.prisma.certificate.count(),
+      this.prisma.certificate.findMany({
+        skip,
+        take: limit,
+        orderBy: { issueDate: 'desc' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              email: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: certificates,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getSubmissions(page = 1, limit = 50) {
+    const skip = (page - 1) * limit;
+    const [totalLabSubmissions, labSubmissions, ctfSubmissions] = await Promise.all([
+      this.prisma.labSubmission.count(),
+      this.prisma.labSubmission.findMany({
+        skip,
+        take: Math.floor(limit / 2),
+        orderBy: { submittedAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+            },
+          },
+          lab: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              category: true,
+            },
+          },
+        },
+      }),
+      this.prisma.cTFSubmission.findMany({
+        skip,
+        take: Math.floor(limit / 2),
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+            },
+          },
+          challenge: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              category: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      labSubmissions,
+      ctfSubmissions,
+      total: totalLabSubmissions,
+    };
+  }
+
+  async getStatistics() {
+    const [
+      totalUsers,
+      totalSolvedLabs,
+      totalSolvedFlags,
+      totalCertificates,
+      recentUsers,
+    ] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.labSubmission.count({ where: { isCorrect: true } }),
+      this.prisma.cTFSubmission.count({ where: { isCorrect: true } }),
+      this.prisma.certificate.count({ where: { status: 'ACTIVE' } }),
+      this.prisma.user.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          role: true,
+          createdAt: true,
+        },
+      }),
+    ]);
+
+    return {
+      overview: {
+        totalUsers,
+        totalSolvedLabs,
+        totalSolvedFlags,
+        totalCertificates,
+      },
+      recentUsers,
+      server: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        uptime: Math.floor(process.uptime()),
+        memoryUsage: process.memoryUsage(),
+      },
+    };
+  }
 }

@@ -6,7 +6,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   Shield, LayoutDashboard, Users, BookOpen, Terminal, Flag, 
   Settings, LogOut, CreditCard, RefreshCw, Layers, Lock, 
-  KeyRound, AlertCircle, ArrowRight, Loader2, CheckCircle2
+  KeyRound, AlertCircle, ArrowRight, Loader2, CheckCircle2,
+  Award, BarChart3, Activity, FileCheck
 } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 
@@ -212,10 +213,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // 3. Fully Authenticated Administrator Panel View
   const navItems = [
     { href: '/admin', label: 'Bosh Panel', icon: LayoutDashboard },
+    { href: '/admin/users', label: 'Foydalanuvchilar', icon: Users },
+    { href: '/admin/learning', label: 'Ta\'lim & Kurslar', icon: BookOpen },
+    { href: '/admin/labs', label: 'Laboratoriyalar', icon: Terminal },
+    { href: '/admin/challenges', label: 'CTF Topshiriqlar', icon: Flag },
+    { href: '/admin/certificates', label: 'Sertifikatlar', icon: Award },
+    { href: '/admin/submissions', label: 'Yechimlar Jurnali', icon: FileCheck },
     { href: '/admin/plans', label: 'Tariflar Rejasi', icon: Layers },
     { href: '/admin/subscriptions', label: 'Obunalar Boshqaruvi', icon: RefreshCw },
     { href: '/admin/payments', label: 'To\'lovlar Audit Logi', icon: CreditCard },
-    { href: '/admin/users', label: 'Foydalanuvchilar', icon: Users },
+    { href: '/admin/statistics', label: 'Platforma Statistikasi', icon: BarChart3 },
+    { href: '/admin/audit-logs', label: 'Xavfsizlik Audit Logi', icon: Activity },
+    { href: '/admin/settings', label: 'Tizim Sozlamalari', icon: Settings },
   ];
 
   return (

@@ -1,9 +1,8 @@
 import Link from 'next/link';
 import { ChevronLeft, Calendar, Clock, Share2, Tag } from 'lucide-react';
-import { use } from 'react';
-
-export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function ArticlePage({ params }: { params: { slug: string } | Promise<{ slug: string }> }) {
+  const resolvedParams = await Promise.resolve(params);
+  const slug = resolvedParams?.slug || 'sql-injection';
 
   return (
     <div className="min-h-screen bg-[#0B0F14] text-gray-100 py-10 px-4">

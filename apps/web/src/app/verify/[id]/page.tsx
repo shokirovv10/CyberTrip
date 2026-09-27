@@ -1,8 +1,9 @@
 import { ShieldCheck, Award, Calendar, User, Search, QrCode, CheckCircle, FileCheck, Hash, ExternalLink, Download } from 'lucide-react';
 import Link from 'next/link';
 
-export default async function VerifyCertificatePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default async function VerifyCertificatePage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
+  const resolved = await Promise.resolve(params);
+  const id = resolved?.id || '';
 
   // Validity check
   const isValid = id.startsWith('CERT-');

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { 
   Shield, Users, MessageSquare, Copy, Check, Crown, Award, 
   Settings, LogOut, UserPlus, ArrowLeft, Trophy, Flag, Terminal, 
@@ -31,10 +32,9 @@ interface TeamTask {
   isDone: boolean;
 }
 
-export default function TeamDetailPage({ params }: { params: any }) {
-  const resolvedParams: { slug: string } =
-    params && typeof (params as any)?.then === 'function' ? use(params as any) : (params || {});
-  const slug = resolvedParams?.slug || '';
+export default function TeamDetailPage({ params }: { params?: { slug?: string } }) {
+  const routeParams = useParams();
+  const slug = (routeParams?.slug as string) || params?.slug || 'cyber-dragons';
 
   const [activeTab, setActiveTab] = useState<'roster' | 'workspace' | 'stats' | 'settings'>('workspace');
   const [copied, setCopied] = useState(false);
