@@ -1,0 +1,31 @@
+{
+  "name": "cybertrip",
+  "private": true,
+  "packageManager": "npm@11.17.0",
+  "workspaces": [
+    "apps/web",
+    "apps/api",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:web": "npm --workspace=@cybertrip/web run dev",
+    "dev:api": "npm --workspace=@cybertrip/api run start:dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "db:generate": "npm --workspace=@cybertrip/database run db:generate",
+    "db:migrate": "npm --workspace=@cybertrip/database run db:migrate",
+    "db:seed": "npm --workspace=@cybertrip/database run db:seed",
+    "db:studio": "npm --workspace=@cybertrip/database run db:studio",
+    "clean": "turbo clean"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

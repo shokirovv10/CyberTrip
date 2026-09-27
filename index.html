@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cybertrip.uz - O'zbekistonning yetakchi kiberxavfsizlik ta'lim platformasi. Professional kurslar, amaliy mashg'ulotlar va sertifikatlar.">
+    <meta name="keywords" content="kiberxavfsizlik, cybersecurity, ethical hacking, penetration testing, O'zbekiston, ta'lim, kurslar">
+    <meta name="author" content="Cybertrip.uz">
+    <title>Cybertrip.uz — Kiberxavfsizlik Professional Ta'lim Platformasi</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- AOS Animation Library -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+</head>
+<body>
+
+    <!-- ==================== PRELOADER ==================== -->
+    <div id="preloader">
+        <div class="preloader-content">
+            <div class="cyber-lock">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <div class="preloader-text">
+                <span>C</span><span>Y</span><span>B</span><span>E</span><span>R</span><span>T</span><span>R</span><span>I</span><span>P</span><span>.</span><span>U</span><span>Z</span>
+            </div>
+            <div class="loading-bar">
+                <div class="loading-bar-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== NAVIGATION ==================== -->
+    <nav id="navbar" class="navbar">
+        <div class="container">
+            <a href="#home" class="nav-logo">
+                <i class="fas fa-shield-halved logo-icon"></i>
+                <span class="logo-text">Cyber<span class="logo-accent">trip</span>.uz</span>
+            </a>
+
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="#home" class="nav-link active">Bosh sahifa</a></li>
+                <li><a href="#cyberRange" class="nav-link">Laboratoriyalar</a></li>
+                <li><a href="#terminalSection" class="nav-link">Terminal</a></li>
+                <li><a href="#ctfSection" class="nav-link">CTF Arena</a></li>
+                <li><a href="#courses" class="nav-link">Kurslar</a></li>
+                <li><a href="#roadmap" class="nav-link">O'quv yo'li</a></li>
+                <li><a href="#faq" class="nav-link">FAQ</a></li>
+                <li><a href="#contact" class="nav-link">Bog'lanish</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="btn btn-outline btn-sm" id="loginBtn">
+                    <i class="fas fa-sign-in-alt"></i> Kirish
+                </button>
+                <button class="btn btn-primary btn-sm" id="registerBtn">
+                    <i class="fas fa-user-plus"></i> Ro'yxatdan o'tish
+                </button>
+                <button class="theme-toggle" id="themeToggle" title="Mavzuni o'zgartirish">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <button class="hamburger" id="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==================== HERO SECTION ==================== -->
+    <section id="home" class="hero">
+        <canvas id="particleCanvas" class="particle-canvas"></canvas>
+        <div class="hero-bg-grid"></div>
+        <div class="container">
+            <div class="hero-content" data-aos="fade-up">
+                <div class="hero-badge">
+                    <i class="fas fa-rocket"></i>
+                    <span>O'zbekistonning #1 Kiberxavfsizlik Platformasi</span>
+                </div>
+                <h1 class="hero-title">
+                    Kiberxavfsizlik <br>
+                    <span class="gradient-text">Kelajagingizni</span> Himoya Qiling
+                </h1>
+                <div class="hero-typing">
+                    <span class="typing-prefix">Biz o'rgatamiz: </span>
+                    <span class="typing-text" id="typingText"></span>
+                    <span class="typing-cursor">|</span>
+                </div>
+                <p class="hero-description">
+                    Dunyo darajasidagi mutaxassislardan professional kiberxavfsizlik ko'nikmalarini o'rganing. 
+                    Amaliy laboratoriyalar, real loyihalar va xalqaro sertifikatlar bilan karyerangizni boshlang.
+                </p>
+                <div class="hero-buttons">
+                    <a href="#courses" class="btn btn-primary btn-lg">
+                        <i class="fas fa-play-circle"></i> Kurslarni ko'rish
+                    </a>
+                    <a href="#about" class="btn btn-outline btn-lg">
+                        <i class="fas fa-info-circle"></i> Batafsil ma'lumot
+                    </a>
+                </div>
+                <div class="hero-trust">
+                    <div class="trust-avatars">
+                        <img src="https://i.pravatar.cc/40?img=1" alt="Student" class="trust-avatar">
+                        <img src="https://i.pravatar.cc/40?img=2" alt="Student" class="trust-avatar">
+                        <img src="https://i.pravatar.cc/40?img=3" alt="Student" class="trust-avatar">
+                        <img src="https://i.pravatar.cc/40?img=4" alt="Student" class="trust-avatar">
+                        <span class="trust-more">+5000</span>
+                    </div>
+                    <div class="trust-info">
+                        <div class="trust-stars">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <span>5000+ talabalar ishonchi</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-visual" data-aos="fade-left" data-aos-delay="200">
+                <div class="hero-terminal">
+                    <div class="terminal-header">
+                        <div class="terminal-dots">
+                            <span class="dot red"></span>
+                            <span class="dot yellow"></span>
+                            <span class="dot green"></span>
+                        </div>
+                        <span class="terminal-title">cybertrip@kali:~</span>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">┌──(cybertrip㉿kali)-[~]</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">└─$ </span>
+                            <span class="terminal-command" id="terminalCommand"></span>
+                            <span class="terminal-cursor">█</span>
+                        </div>
+                        <div class="terminal-output" id="terminalOutput">
+                            <div class="output-line success">
+                                <i class="fas fa-check-circle"></i> Scan yakunlandi: 3 zaiflik topildi
+                            </div>
+                            <div class="output-line warning">
+                                <i class="fas fa-exclamation-triangle"></i> CVE-2024-1234: Kritik daraja
+                            </div>
+                            <div class="output-line info">
+                                <i class="fas fa-info-circle"></i> Hisobot tayyorlanmoqda...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="hero-scroll-indicator">
+            <a href="#stats">
+                <div class="mouse">
+                    <div class="mouse-wheel"></div>
+                </div>
+                <span>Pastga suring</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- ==================== STATISTICS ==================== -->
+    <section id="stats" class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card" data-aos="fade-up" data-aos-delay="0">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="stat-number" data-count="5000">0</div>
+                    <div class="stat-suffix">+</div>
+                    <div class="stat-label">Talabalar</div>
+                </div>
+                <div class="stat-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="stat-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <div class="stat-number" data-count="25">0</div>
+                    <div class="stat-suffix">+</div>
+                    <div class="stat-label">Professional Kurslar</div>
+                </div>
+                <div class="stat-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="stat-icon">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <div class="stat-number" data-count="98">0</div>
+                    <div class="stat-suffix">%</div>
+                    <div class="stat-label">Qoniqish Darajasi</div>
+                </div>
+                <div class="stat-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="stat-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div class="stat-number" data-count="15">0</div>
+                    <div class="stat-suffix">+</div>
+                    <div class="stat-label">Mutaxassis O'qituvchilar</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== ABOUT / FEATURES ==================== -->
+    <section id="about" class="about-section">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="section-badge"><i class="fas fa-shield-halved"></i> Nima uchun biz?</span>
+                <h2 class="section-title">Nima Uchun <span class="gradient-text">Cybertrip.uz</span>?</h2>
+                <p class="section-subtitle">Biz bilan kiberxavfsizlik sohasida professional bo'lishingiz uchun barcha imkoniyatlar mavjud</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="0">
+                    <div class="feature-icon">
+                        <i class="fas fa-laptop-code"></i>
+                    </div>
+                    <h3>Amaliy Laboratoriyalar</h3>
+                    <p>Real muhitda amaliy mashg'ulotlar. O'z virtual laboratoriyangizda xavfsiz tarzda hujum va himoya texnikalarini mashq qiling.</p>
+                </div>
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-icon">
+                        <i class="fas fa-users-cog"></i>
+                    </div>
+                    <h3>Tajribali Mentorlar</h3>
+                    <p>10+ yillik tajribaga ega xalqaro sertifikatlangan mutaxassislar. OSCP, CEH, CISSP sertifikatli o'qituvchilar.</p>
+                </div>
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-icon">
+                        <i class="fas fa-award"></i>
+                    </div>
+                    <h3>Xalqaro Sertifikatlar</h3>
+                    <p>Kursni tugatgandan so'ng xalqaro darajada tan olingan sertifikat oling. CompTIA, EC-Council imtihonlariga tayyorlov.</p>
+                </div>
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="feature-icon">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <h3>Kasbiy Yordam</h3>
+                    <p>Kursni tugatgandan so'ng ish topishda yordam. Hamkor kompaniyalar va ishga joylashish kafolati.</p>
+                </div>
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="feature-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3>Moslashuvchan Jadval</h3>
+                    <p>Online va offline formatda. Har qanday vaqtda, har qanday joydan o'rganing. 24/7 materiallarga kirish imkoniyati.</p>
+                </div>
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="500">
+                    <div class="feature-icon">
+                        <i class="fas fa-people-group"></i>
+                    </div>
+                    <h3>CTF Musobaqalar</h3>
+                    <p>Muntazam CTF (Capture The Flag) musobaqalari. O'z bilimingizni sinab ko'ring va mukofotlar yutib oling.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== COURSES ==================== -->
+    <section id="courses" class="courses-section">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="section-badge"><i class="fas fa-graduation-cap"></i> Kurslar</span>
+                <h2 class="section-title">Bizning <span class="gradient-text">Kurslarimiz</span></h2>
+                <p class="section-subtitle">Boshlang'ich darajadan professional darajagacha — har bir daraja uchun maxsus kurslar</p>
+            </div>
+
+            <!-- Course Filter -->
+            <div class="course-filters" data-aos="fade-up">
+                <button class="filter-btn active" data-filter="all">
+                    <i class="fas fa-th-large"></i> Barchasi
+                </button>
+                <button class="filter-btn" data-filter="offensive">
+                    <i class="fas fa-crosshairs"></i> Offensive
+                </button>
+                <button class="filter-btn" data-filter="defensive">
+                    <i class="fas fa-shield-alt"></i> Defensive
+                </button>
+                <button class="filter-btn" data-filter="network">
+                    <i class="fas fa-network-wired"></i> Tarmoq
+                </button>
+                <button class="filter-btn" data-filter="web">
+                    <i class="fas fa-globe"></i> Web
+                </button>
+                <button class="filter-btn" data-filter="mobile">
+                    <i class="fas fa-mobile-alt"></i> Mobil
+                </button>
+            </div>
+
+            <!-- Courses Grid -->
+            <div class="courses-grid">
+                <!-- Course 1 -->
+                <div class="course-card" data-category="offensive" data-aos="fade-up" data-aos-delay="0">
+                    <div class="course-image">
+                        <div class="course-image-placeholder">
+                            <i class="fas fa-user-secret"></i>
+                        </div>
+                        <span class="course-level level-beginner">Boshlang'ich</span>
+                        <span class="course-duration"><i class="fas fa-clock"></i> 3 oy</span>
+                    </div>
+                    <div class="course-content">
+                        <div class="course-tags">
+                            <span class="tag">Ethical Hacking</span>
+                            <span class="tag">Kali Linux</span>
+                        </div>
+                        <h3 class="course-title">Ethical Hacking Asoslari</h3>
+                        <p class="course-desc">Kiberxavfsizlikning asosiy tushunchalari, Kali Linux, tarmoq skanerlash va zaifliklarni aniqlash.</p>
+                        <div class="course-meta">
+                            <div class="course-students">
+                                <i class="fas fa-users"></i> 1,250 talaba
+                            </div>
+                            <div class="course-rating">
+                                <i class="fas fa-star"></i> 4.8
+                            </div>
+                        </div>
+                        <div class="course-footer">
+                            <div class="course-price">
+                                <span class="price-old">2,500,000 so'm</span>
+                                <span class="price-current">1,800,000 so'm</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm course-enroll">
+                                <i class="fas fa-shopping-cart"></i> Yozilish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course 2 -->
+                <div class="course-card" data-category="web" data-aos="fade-up" data-aos-delay="100">
+                    <div class="course-image">
+                        <div class="course-image-placeholder">
+                            <i class="fas fa-bug"></i>
+                        </div>
+                        <span class="course-level level-intermediate">O'rta</span>
+                        <span class="course-duration"><i class="fas fa-clock"></i> 4 oy</span>
+                    </div>
+                    <div class="course-content">
+                        <div class="course-tags">
+                            <span class="tag">Bug Bounty</span>
+                            <span class="tag">OWASP</span>
+                        </div>
+                        <h3 class="course-title">Web Application Security</h3>
+                        <p class="course-desc">OWASP Top 10, SQL Injection, XSS, CSRF va boshqa web zaifliklarni topish va bartaraf etish.</p>
+                        <div class="course-meta">
+                            <div class="course-students">
+                                <i class="fas fa-users"></i> 890 talaba
+                            </div>
+                            <div class="course-rating">
+                                <i class="fas fa-star"></i> 4.9
+                            </div>
+                        </div>
+                        <div class="course-footer">
+                            <div class="course-price">
+                                <span class="price-old">3,000,000 so'm</span>
+                                <span class="price-current">2,200,000 so'm</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm course-enroll">
+                                <i class="fas fa-shopping-cart"></i> Yozilish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course 3 -->
+                <div class="course-card" data-category="offensive" data-aos="fade-up" data-aos-delay="200">
+                    <div class="course-image">
+                        <div class="course-image-placeholder">
+                            <i class="fas fa-terminal"></i>
+                        </div>
+                        <span class="course-level level-advanced">Professional</span>
+                        <span class="course-duration"><i class="fas fa-clock"></i> 6 oy</span>
+                    </div>
+                    <div class="course-content">
+                        <div class="course-tags">
+                            <span class="tag">Pentest</span>
+                            <span class="tag">Red Team</span>
+                        </div>
+                        <h3 class="course-title">Advanced Penetration Testing</h3>
+                        <p class="course-desc">Professional pentest metodologiyalari, exploit yozish, post-exploitation va Red Team operatsiyalari.</p>
+                        <div class="course-meta">
+                            <div class="course-students">
+                                <i class="fas fa-users"></i> 450 talaba
+                            </div>
+                            <div class="course-rating">
+                                <i class="fas fa-star"></i> 4.9
+                            </div>
+                        </div>
+                        <div class="course-footer">
+                            <div class="course-price">
+                                <span class="price-old">5,000,000 so'm</span>
+                                <span class="price-current">3,800,000 so'm</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm course-enroll">
+                                <i class="fas fa-shopping-cart"></i> Yozilish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course 4 -->
+                <div class="course-card" data-category="defensive" data-aos="fade-up" data-aos-delay="0">
+                    <div class="course-image">
+                        <div class="course-image-placeholder">
+                            <i class="fas fa-shield-virus"></i>
+                        </div>
+                        <span class="course-level level-intermediate">O'rta</span>
+                        <span class="course-duration"><i class="fas fa-clock"></i> 4 oy</span>
+                    </div>
+                    <div class="course-content">
+                        <div class="course-tags">
+                            <span class="tag">SOC</span>
+                            <span class="tag">Blue Team</span>
+                        </div>
+                        <h3 class="course-title">SOC Analyst — Blue Team</h3>
+                        <p class="course-desc">SIEM tizimlar, log tahlil, incident response, threat hunting va kiberhujumlardan himoyalanish.</p>
+                        <div class="course-meta">
+                            <div class="course-students">
+                                <i class="fas fa-users"></i> 670 talaba
+                            </div>
+                            <div class="course-rating">
+                                <i class="fas fa-star"></i> 4.7
+                            </div>
+                        </div>
+                        <div class="course-footer">
+                            <div class="course-price">
+                                <span class="price-old">3,500,000 so'm</span>
+                                <span class="price-current">2,600,000 so'm</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm course-enroll">
+                                <i class="fas fa-shopping-cart"></i> Yozilish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course 5 -->
+                <div class="course-card" data-category="network" data-aos="fade-up" data-aos-delay="100">
+                    <div class="course-image">
+                        <div class="course-image-placeholder">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <span class="course-level level-beginner">Boshlang'ich</span>
+                        <span class="course-duration"><i class="fas fa-clock"></i> 2 oy</span>
+                    </div>
+                    <div class="course-content">
+                        <div class="course-tags">
+                            <span class="tag">Networking</span>
+                            <span class="tag">CompTIA</span>
+                        </div>
+                        <h3 class="course-title">Tarmoq Xavfsizligi Asoslari</h3>
+                        <p class="course-desc">TCP/IP, firewall konfiguratsiyasi, VPN, IDS/IPS tizimlari va tarmoq monitoringi asoslari.</p>
+                        <div class="course-meta">
+                            <div class="course-students">
+                                <i class="fas fa-users"></i> 980 talaba
+                            </div>
+                            <div class="course-rating">
+                                <i class="fas fa-star"></i> 4.6
+                            </div>
+                        </div>
+                        <div class="course-footer">
+                            <div class="course-price">
+                                <span class="price-old">2,000,000 so'm</span>
+                                <span class="price-current">1,500,000 so'm</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm course-enroll">
+                                <i class="fas fa-shopping-cart"></i> Yozilish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course 6 -->
+                <div class="course-card" data-category="mobile" data-aos="fade-up" data-aos-delay="200">
+                    <div class="course-image">
+                        <div class="course-image-placeholder">
+                            <i class="fas fa-mobile-screen-button"></i>
+                        </div>
+                        <span class="course-level level-intermediate">O'rta</span>
+                        <span class="course-duration"><i class="fas fa-clock"></i> 3 oy</span>
+                    </div>
+                    <div class="course-content">
+                        <div class="course-tags">
+                            <span class="tag">Android</span>
+                            <span class="tag">iOS</span>
+                        </div>
+                        <h3 class="course-title">Mobil Ilovalar Xavfsizligi</h3>
+                        <p class="course-desc">Android va iOS ilovalarni reverse engineering, dinamik tahlil va zaifliklarni aniqlash.</p>
+                        <div class="course-meta">
+                            <div class="course-students">
+                                <i class="fas fa-users"></i> 340 talaba
+                            </div>
+                            <div class="course-rating">
+                                <i class="fas fa-star"></i> 4.8
+                            </div>
+                        </div>
+                        <div class="course-footer">
+                            <div class="course-price">
+                                <span class="price-old">3,000,000 so'm</span>
+                                <span class="price-current">2,400,000 so'm</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm course-enroll">
+                                <i class="fas fa-shopping-cart"></i> Yozilish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course 7 -->
+                <div class="course-card" data-category="defensive" data-aos="fade-up" data-aos-delay="0">
+                    <div class="course-image">
+                        <div class="course-image-placeholder">
+                            <i class="fas fa-virus-slash"></i>
+                        </div>
+                        <span class="course-level level-advanced">Professional</span>
+                        <span class="course-duration"><i class="fas fa-clock"></i> 5 oy</span>
+                    </div>
+                    <div class="course-content">
+                        <div class="course-tags">
+                            <span class="tag">Malware</span>
+                            <span class="tag">Forensics</span>
+                        </div>
+                        <h3 class="course-title">Malware Analysis & Forensics</h3>
+                        <p class="course-desc">Zararli dasturlarni tahlil qilish, raqamli kriminalistika, memory forensics va incident response.</p>
+                        <div class="course-meta">
+                            <div class="course-students">
+                                <i class="fas fa-users"></i> 280 talaba
+                            </div>
+                            <div class="course-rating">
+                                <i class="fas fa-star"></i> 4.9
+                            </div>
+                        </div>
+                        <div class="course-footer">
+                            <div class="course-price">
+                                <span class="price-old">4,500,000 so'm</span>
+                                <span class="price-current">3,500,000 so'm</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm course-enroll">
+                                <i class="fas fa-shopping-cart"></i> Yozilish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course 8 -->
+                <div class="course-card" data-category="web" data-aos="fade-up" data-aos-delay="100">
+                    <div class="course-image">
+                        <div class="course-image-placeholder">
+                            <i class="fas fa-cloud-arrow-up"></i>
+                        </div>
+                        <span class="course-level level-intermediate">O'rta</span>
+                        <span class="course-duration"><i class="fas fa-clock"></i> 3 oy</span>
+                    </div>
+                    <div class="course-content">
+                        <div class="course-tags">
+                            <span class="tag">Cloud</span>
+                            <span class="tag">DevSecOps</span>
+                        </div>
+                        <h3 class="course-title">Cloud & DevSecOps Security</h3>
+                        <p class="course-desc">AWS/Azure xavfsizligi, Docker/Kubernetes hardening, CI/CD pipeline xavfsizligi va Infrastructure as Code.</p>
+                        <div class="course-meta">
+                            <div class="course-students">
+                                <i class="fas fa-users"></i> 520 talaba
+                            </div>
+                            <div class="course-rating">
+                                <i class="fas fa-star"></i> 4.7
+                            </div>
+                        </div>
+                        <div class="course-footer">
+                            <div class="course-price">
+                                <span class="price-old">3,500,000 so'm</span>
+                                <span class="price-current">2,800,000 so'm</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm course-enroll">
+                                <i class="fas fa-shopping-cart"></i> Yozilish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Course 9 -->
+                <div class="course-card" data-category="offensive" data-aos="fade-up" data-aos-delay="200">
+                    <div class="course-image">
+                        <div class="course-image-placeholder">
+                            <i class="fas fa-flag-checkered"></i>
+                        </div>
+                        <span class="course-level level-beginner">Boshlang'ich</span>
+                        <span class="course-duration"><i class="fas fa-clock"></i> 2 oy</span>
+                    </div>
+                    <div class="course-content">
+                        <div class="course-tags">
+                            <span class="tag">CTF</span>
+                            <span class="tag">Challenges</span>
+                        </div>
+                        <h3 class="course-title">CTF va Cyber Challenges</h3>
+                        <p class="course-desc">Capture The Flag musobaqalariga tayyorgarlik, crypto, stego, reverse engineering va pwn asoslari.</p>
+                        <div class="course-meta">
+                            <div class="course-students">
+                                <i class="fas fa-users"></i> 750 talaba
+                            </div>
+                            <div class="course-rating">
+                                <i class="fas fa-star"></i> 4.8
+                            </div>
+                        </div>
+                        <div class="course-footer">
+                            <div class="course-price">
+                                <span class="price-old">1,800,000 so'm</span>
+                                <span class="price-current">1,200,000 so'm</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm course-enroll">
+                                <i class="fas fa-shopping-cart"></i> Yozilish
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="courses-cta" data-aos="fade-up">
+                <p>Barcha kurslarni ko'rish va o'zingizga mos yo'nalishni tanlang</p>
+                <a href="#cyberRange" class="btn btn-outline btn-lg">
+                    <i class="fas fa-flask"></i> Interaktiv Laboratoriyalarga O'tish
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== CYBER RANGE & LABORATORIES ==================== -->
+    <section id="cyberRange" class="about-section" style="background: #070a12; border-top: 1px solid rgba(0, 212, 255, 0.15); border-bottom: 1px solid rgba(0, 212, 255, 0.15); padding: 5rem 0;">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="section-badge"><i class="fas fa-crosshairs"></i> Amaliy Kiber-Poligon</span>
+                <h2 class="section-title">Haqiqiy Zaif <span class="gradient-text">Veb-Ilovalar</span> (Cyber Range)</h2>
+                <p class="section-subtitle">Har bir zaiflik alohida, realistik ta'lim ilovasida sinovdan o'tkaziladi. Hech qanday soxta kartalar yo'q — to'liq interaktiv muhit!</p>
+            </div>
+
+            <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+                <!-- Target 1: SQL Injection -->
+                <div class="feature-card" data-aos="fade-up" style="border: 1px solid rgba(0, 212, 255, 0.3); background: rgba(13, 21, 44, 0.7);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <span style="background: rgba(0,212,255,0.15); color: #00d4ff; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">SQL INJECTION</span>
+                        <span style="color: #00ff88; font-size: 0.8rem; font-weight: 700;">+300 XP</span>
+                    </div>
+                    <div class="feature-icon" style="background: rgba(0,212,255,0.1); color: #00d4ff;"><i class="fas fa-database"></i></div>
+                    <h3>CyberBooks — Kitob Do'koni</h3>
+                    <p>Qidiruv tizimi va login formasida SQL Injection zaifligi. UNION so'rovlar yordamida ma'lumotlar bazasini o'g'irlang va parolsiz admin huquqini oling.</p>
+                    <div style="margin: 1.25rem 0; font-size: 0.8rem; color: #94a3b8; font-family: monospace;">Host: target-cyberbooks.lab:8080</div>
+                    <button class="btn btn-primary btn-block" onclick="openLabRunner('CyberBooks (SQL Injection)', 'targets/cyberbooks/index.html')">
+                        <i class="fas fa-play-circle"></i> Laboratoriyani Boshlash
+                    </button>
+                </div>
+
+                <!-- Target 2: XSS -->
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="100" style="border: 1px solid rgba(0, 255, 136, 0.3); background: rgba(13, 21, 44, 0.7);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <span style="background: rgba(0,255,136,0.15); color: #00ff88; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">CROSS-SITE SCRIPTING</span>
+                        <span style="color: #00ff88; font-size: 0.8rem; font-weight: 700;">+250 XP</span>
+                    </div>
+                    <div class="feature-icon" style="background: rgba(0,255,136,0.1); color: #00ff88;"><i class="fas fa-comments"></i></div>
+                    <h3>CyberForum — Xavfsizlik Forumi</h3>
+                    <p>Stored va Reflected XSS zaifliklari. Forum izohlarida maxsus JavaScript kiritib, sahifaga tashrif buyurgan Administratorning maxfiy sessiya cookie-faylini tuting.</p>
+                    <div style="margin: 1.25rem 0; font-size: 0.8rem; color: #94a3b8; font-family: monospace;">Host: target-cyberforum.lab:8080</div>
+                    <button class="btn btn-primary btn-block" onclick="openLabRunner('CyberForum (XSS Security)', 'targets/cyberforum/index.html')">
+                        <i class="fas fa-play-circle"></i> Laboratoriyani Boshlash
+                    </button>
+                </div>
+
+                <!-- Target 3: IDOR -->
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="200" style="border: 1px solid rgba(59, 130, 246, 0.3); background: rgba(13, 21, 44, 0.7);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <span style="background: rgba(59,130,246,0.15); color: #60a5fa; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">IDOR / BOLA</span>
+                        <span style="color: #00ff88; font-size: 0.8rem; font-weight: 700;">+300 XP</span>
+                    </div>
+                    <div class="feature-icon" style="background: rgba(59,130,246,0.1); color: #60a5fa;"><i class="fas fa-folder-open"></i></div>
+                    <h3>SecureDocs — Korporativ Portal</h3>
+                    <p>Insecure Direct Object Reference. Mijoz ID raqamlarini o'zgartirish orqali korxona rahbariyatining o'ta maxfiy audit hisoboti va tizim kalitlarini ochib oling.</p>
+                    <div style="margin: 1.25rem 0; font-size: 0.8rem; color: #94a3b8; font-family: monospace;">Host: securedocs.corp:443/api</div>
+                    <button class="btn btn-primary btn-block" onclick="openLabRunner('SecureDocs (IDOR / BOLA)', 'targets/securedocs/index.html')">
+                        <i class="fas fa-play-circle"></i> Laboratoriyani Boshlash
+                    </button>
+                </div>
+
+                <!-- Target 4: Command Injection -->
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="0" style="border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(13, 21, 44, 0.7);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <span style="background: rgba(239,68,68,0.15); color: #f87171; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">COMMAND INJECTION</span>
+                        <span style="color: #00ff88; font-size: 0.8rem; font-weight: 700;">+350 XP</span>
+                    </div>
+                    <div class="feature-icon" style="background: rgba(239,68,68,0.1); color: #f87171;"><i class="fas fa-terminal"></i></div>
+                    <h3>DiagnosticPanel — Server Utilitasi</h3>
+                    <p>Tarmoq tekshiruvchisida kiritmani yetarli sanitizatsiya qilmaslik oqibatida OS Command Injection. Serverda buyruq ajratgichlari orqali root darajasida kod bajaring.</p>
+                    <div style="margin: 1.25rem 0; font-size: 0.8rem; color: #94a3b8; font-family: monospace;">Host: diagnostics.internal.server</div>
+                    <button class="btn btn-primary btn-block" onclick="openLabRunner('DiagnosticPanel (Command Injection)', 'targets/diagnosticpanel/index.html')">
+                        <i class="fas fa-play-circle"></i> Laboratoriyani Boshlash
+                    </button>
+                </div>
+
+                <!-- Target 5: SSRF -->
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="100" style="border: 1px solid rgba(139, 92, 246, 0.3); background: rgba(13, 21, 44, 0.7);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <span style="background: rgba(139,92,246,0.15); color: #c084fc; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">SSRF (CLOUD)</span>
+                        <span style="color: #00ff88; font-size: 0.8rem; font-weight: 700;">+350 XP</span>
+                    </div>
+                    <div class="feature-icon" style="background: rgba(139,92,246,0.1); color: #c084fc;"><i class="fas fa-cloud-arrow-down"></i></div>
+                    <h3>SitePreview — Metama'lumot Generator</h3>
+                    <p>Server-Side Request Forgery. Server nomidan ichki VPC tarmoqqa so'rov yuborib, 169.254.169.254 bulut metadata xizmatidagi maxfiy IAM tokenlarni tortib oling.</p>
+                    <div style="margin: 1.25rem 0; font-size: 0.8rem; color: #94a3b8; font-family: monospace;">Host: preview.service.corp:80</div>
+                    <button class="btn btn-primary btn-block" onclick="openLabRunner('SitePreview (SSRF & Cloud)', 'targets/sitepreview/index.html')">
+                        <i class="fas fa-play-circle"></i> Laboratoriyani Boshlash
+                    </button>
+                </div>
+
+                <!-- Target 6: File Upload -->
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="200" style="border: 1px solid rgba(236, 72, 153, 0.3); background: rgba(13, 21, 44, 0.7);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                        <span style="background: rgba(236,72,153,0.15); color: #f472b6; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700;">FILE UPLOAD (RCE)</span>
+                        <span style="color: #00ff88; font-size: 0.8rem; font-weight: 700;">+300 XP</span>
+                    </div>
+                    <div class="feature-icon" style="background: rgba(236,72,153,0.1); color: #f472b6;"><i class="fas fa-file-upload"></i></div>
+                    <h3>MediaVault — Fayl Xotirasi</h3>
+                    <p>Fayl yuklashda cheklovlar yetishmasligi. Rasmlar o'rniga masofaviy boshqaruvchi web-shell yuklang va server ustidan to'liq nazoratni (RCE) o'rnating.</p>
+                    <div style="margin: 1.25rem 0; font-size: 0.8rem; color: #94a3b8; font-family: monospace;">Host: mediavault.corp/uploads</div>
+                    <button class="btn btn-primary btn-block" onclick="openLabRunner('MediaVault (File Upload / RCE)', 'targets/mediavault/index.html')">
+                        <i class="fas fa-play-circle"></i> Laboratoriyani Boshlash
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== IN-BROWSER LINUX TERMINAL ==================== -->
+    <section id="terminalSection" class="about-section" style="padding: 5rem 0;">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="section-badge"><i class="fas fa-terminal"></i> Brauzerdagi Linux Qobig'i</span>
+                <h2 class="section-title">Interaktiv <span class="gradient-text">Linux Terminali</span></h2>
+                <p class="section-subtitle">O'rnatish shart emas. To'g'ridan-to'g'ri brauzeringizda virtual Linux tizimi bilan ishlang, buyruqlarni bajaring va audit vazifalarini bajaring.</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; background: #070a12; border: 1px solid rgba(0, 212, 255, 0.2); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6);" data-aos="fade-up">
+                
+                <!-- Terminal Left -->
+                <div style="background: #03060d; padding: 1.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; display: flex; flex-direction: column; min-height: 400px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #1a253a; padding-bottom: 0.75rem; margin-bottom: 0.75rem; color: #64748b; font-size: 0.75rem;">
+                        <div style="display: flex; gap: 6px;">
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background: #ef4444;"></span>
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background: #f59e0b;"></span>
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981;"></span>
+                            <span style="color: #94a3b8; font-weight: 600; margin-left: 0.5rem;">student@cybertrip-sandbox:~</span>
+                        </div>
+                        <span style="color: #00ff88;">● BASH ACTIVE (Ubuntu 24.04 LTS)</span>
+                    </div>
+
+                    <div id="inlineTermLog" style="flex: 1; overflow-y: auto; color: #cbd5e1; line-height: 1.6; white-space: pre-wrap;">CYBERTRIP.UZ Linux Sandbox v2.4
+Xush kelibsiz! Buyruqlar ro'yxatini ko'rish uchun 'help' deb yozing.
+Vazifa: /tmp katalogidagi shubhali fayllarni tahlil qiling.
+
+</div>
+
+                    <form id="inlineTermForm" onsubmit="handleInlineTerminalSubmit(event)" style="display: flex; align-items: center; border-top: 1px solid #1a253a; padding-top: 0.75rem; margin-top: 0.5rem;">
+                        <span style="color: #00ff88; font-weight: 700; margin-right: 0.5rem;">student@cybertrip:~$</span>
+                        <input type="text" id="inlineTermInput" style="flex: 1; background: transparent; border: none; color: #fff; font-family: monospace; font-size: 0.85rem; outline: none;" placeholder="buyruq kiriting: masalan, ls -la /tmp, whoami, id..." autocomplete="off">
+                        <button type="submit" style="background: rgba(0, 212, 255, 0.2); border: 1px solid #00d4ff; color: #00d4ff; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">Bajarish ↵</button>
+                    </form>
+                </div>
+
+                <!-- Terminal Right: Tasks -->
+                <div style="background: #090e1a; padding: 1.5rem; border-left: 1px solid #1a253a; display: flex; flex-direction: column;">
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="color: #f1f5f9; font-size: 0.95rem; margin-bottom: 0.25rem;">Terminal Vazifalari:</h4>
+                        <span style="font-size: 0.75rem; color: #94a3b8;">Bajarildi: <strong id="termTaskCounter" style="color: #00ff88;">0 / 3</strong></span>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; flex: 1;">
+                        <div id="termTask1" style="background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; padding: 0.75rem; border-radius: 8px;">
+                            <div style="font-size: 0.8rem; font-weight: 600; color: #e2e8f0;">1. Tizim ma'lumotlari</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;"><code>whoami</code> yoki <code>uname -a</code> buyrug'ini bajaring.</div>
+                        </div>
+                        <div id="termTask2" style="background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; padding: 0.75rem; border-radius: 8px;">
+                            <div style="font-size: 0.8rem; font-weight: 600; color: #e2e8f0;">2. /tmp dagi yashirin tahdid</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;"><code>ls -la /tmp</code> orqali yashirin backdoor faylini toping.</div>
+                        </div>
+                        <div id="termTask3" style="background: rgba(15, 23, 42, 0.6); border: 1px solid #1e293b; padding: 0.75rem; border-radius: 8px;">
+                            <div style="font-size: 0.8rem; font-weight: 600; color: #e2e8f0;">3. Shubhali skriptni o'qish</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;"><code>cat /tmp/.suspicious_backdoor.sh</code> orqali flagni oling.</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(0, 212, 255, 0.08); border-radius: 6px; font-size: 0.75rem; color: #7dd3fc;">
+                        💡 <strong>Maslahat:</strong> Terminalda <code>help</code>, <code>ps</code>, <code>id</code>, <code>pwd</code> buyruqlaridan ham erkin foydalanishingiz mumkin.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== CTF ARENA & CHALLENGES ==================== -->
+    <section id="ctfSection" class="about-section" style="background: #060911; border-top: 1px solid rgba(123, 47, 247, 0.2); border-bottom: 1px solid rgba(123, 47, 247, 0.2); padding: 5rem 0;">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="section-badge" style="border-color: #7b2ff7; color: #c084fc;"><i class="fas fa-flag"></i> CTF Arena (Capture The Flag)</span>
+                <h2 class="section-title">Kiberxavfsizlik <span class="gradient-text" style="background: linear-gradient(135deg, #c084fc, #00d4ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Musobaqalari</span></h2>
+                <p class="section-subtitle">Zaifliklarni ekspluatatsiya qiling, bayroqlarni (Flag) toping va o'zbekistonlik xakerlar reytingida yuqoriga ko'tariling!</p>
+            </div>
+
+            <!-- Score banner -->
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(123, 47, 247, 0.1); border: 1px solid rgba(123, 47, 247, 0.3); border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 2rem;" data-aos="fade-up">
+                <div style="display:flex; gap: 1.5rem; align-items:center;">
+                    <div>
+                        <span style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase;">Sizning Ballingiz:</span>
+                        <div id="ctfTotalScore" style="font-size:1.5rem; font-weight:800; color:#00ff88;">0 ball</div>
+                    </div>
+                    <div style="height:35px; width:1px; background:#334155;"></div>
+                    <div>
+                        <span style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase;">Yechilgan:</span>
+                        <div id="ctfSolvedCounter" style="font-size:1.25rem; font-weight:700; color:#c084fc;">0 / 4 ta</div>
+                    </div>
+                </div>
+                <div style="font-size:0.85rem; color:#94a3b8;">Format: <code>FLAG{...}</code></div>
+            </div>
+
+            <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+                <!-- CTF 1 -->
+                <div class="feature-card" style="border: 1px solid rgba(123, 47, 247, 0.3); background: rgba(16, 12, 34, 0.8);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem;">
+                        <span style="color:#00d4ff; font-size:0.75rem; font-weight:700;">WEB EXPLOIT</span>
+                        <span style="color:#00ff88; font-weight:700;">+200 ball</span>
+                    </div>
+                    <h3 style="font-size:1.05rem;">SQLi: Admin Parolini Chetlab O'tish</h3>
+                    <p style="font-size:0.85rem;">CyberBooks do'konida SQL Injection orqali autentifikatsiyani chetlab o'ting va olingan flagni topshiring.</p>
+                    <div style="margin-top:1rem;">
+                        <input type="text" id="flagInput1" placeholder="FLAG{...}" style="width:100%; background:#070a12; border:1px solid #334155; color:#fff; padding:0.5rem 0.75rem; border-radius:6px; font-size:0.8rem; font-family:monospace; margin-bottom:0.5rem;">
+                        <button class="btn btn-outline btn-block btn-sm" onclick="checkCTFFlag(1, 'FLAG{sql_1nj3ct10n_m4st3r_2024}', 200)">Flagni Topshirish</button>
+                    </div>
+                </div>
+
+                <!-- CTF 2 -->
+                <div class="feature-card" style="border: 1px solid rgba(123, 47, 247, 0.3); background: rgba(16, 12, 34, 0.8);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem;">
+                        <span style="color:#00ff88; font-size:0.75rem; font-weight:700;">XSS / CLIENT</span>
+                        <span style="color:#00ff88; font-weight:700;">+250 ball</span>
+                    </div>
+                    <h3 style="font-size:1.05rem;">XSS: Admin Cookie Hijack</h3>
+                    <p style="font-size:0.85rem;">CyberForum ilovasida Stored XSS yordamida Administrator sessiya tokeni ichidagi flagni tutib oling.</p>
+                    <div style="margin-top:1rem;">
+                        <input type="text" id="flagInput2" placeholder="FLAG{...}" style="width:100%; background:#070a12; border:1px solid #334155; color:#fff; padding:0.5rem 0.75rem; border-radius:6px; font-size:0.8rem; font-family:monospace; margin-bottom:0.5rem;">
+                        <button class="btn btn-outline btn-block btn-sm" onclick="checkCTFFlag(2, 'FLAG{xss_c00k13_st0l3n_by_p3nt3st3r}', 250)">Flagni Topshirish</button>
+                    </div>
+                </div>
+
+                <!-- CTF 3 -->
+                <div class="feature-card" style="border: 1px solid rgba(123, 47, 247, 0.3); background: rgba(16, 12, 34, 0.8);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem;">
+                        <span style="color:#f59e0b; font-size:0.75rem; font-weight:700;">API / IDOR</span>
+                        <span style="color:#00ff88; font-weight:700;">+300 ball</span>
+                    </div>
+                    <h3 style="font-size:1.05rem;">IDOR: Maxfiy Shartnoma Audit</h3>
+                    <p style="font-size:0.85rem;">SecureDocs portalida boshqa mijozga tegishli #1001-sonli maxfiy shartnoma ichidagi audit flagini toping.</p>
+                    <div style="margin-top:1rem;">
+                        <input type="text" id="flagInput3" placeholder="FLAG{...}" style="width:100%; background:#070a12; border:1px solid #334155; color:#fff; padding:0.5rem 0.75rem; border-radius:6px; font-size:0.8rem; font-family:monospace; margin-bottom:0.5rem;">
+                        <button class="btn btn-outline btn-block btn-sm" onclick="checkCTFFlag(3, 'FLAG{idor_unauthorized_confidential_contract_1001}', 300)">Flagni Topshirish</button>
+                    </div>
+                </div>
+
+                <!-- CTF 4 -->
+                <div class="feature-card" style="border: 1px solid rgba(123, 47, 247, 0.3); background: rgba(16, 12, 34, 0.8);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:0.75rem;">
+                        <span style="color:#ef4444; font-size:0.75rem; font-weight:700;">LINUX / RCE</span>
+                        <span style="color:#00ff88; font-weight:700;">+350 ball</span>
+                    </div>
+                    <h3 style="font-size:1.05rem;">Command Injection Shell</h3>
+                    <p style="font-size:0.85rem;">DiagnosticPanel orqali <code>/secret/flag.txt</code> faylini o'qib tizim administrator flagini oling.</p>
+                    <div style="margin-top:1rem;">
+                        <input type="text" id="flagInput4" placeholder="FLAG{...}" style="width:100%; background:#070a12; border:1px solid #334155; color:#fff; padding:0.5rem 0.75rem; border-radius:6px; font-size:0.8rem; font-family:monospace; margin-bottom:0.5rem;">
+                        <button class="btn btn-outline btn-block btn-sm" onclick="checkCTFFlag(4, 'FLAG{c0mm4nd_1nj3ct10n_r00t_sh3ll_2026}', 350)">Flagni Topshirish</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ==================== LEARNING ROADMAP ==================== -->
+    <section id="roadmap" class="roadmap-section">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="section-badge"><i class="fas fa-route"></i> O'quv yo'li</span>
+                <h2 class="section-title">O'quv <span class="gradient-text">Yo'l Xaritasi</span></h2>
+                <p class="section-subtitle">Kiberxavfsizlik mutaxassisi bo'lish uchun bosqichma-bosqich yo'l</p>
+            </div>
+
+            <div class="roadmap-timeline">
+                <div class="timeline-item" data-aos="fade-right">
+                    <div class="timeline-marker">
+                        <span class="timeline-step">1</span>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-badge beginner">Boshlang'ich</div>
+                        <h3>IT va Tarmoq Asoslari</h3>
+                        <p>Kompyuter tarmoqlari, operatsion tizimlar (Linux/Windows), dasturlash asoslari (Python, Bash)</p>
+                        <div class="timeline-duration"><i class="fas fa-calendar"></i> 2-3 oy</div>
+                        <div class="timeline-skills">
+                            <span>Linux</span><span>Networking</span><span>Python</span><span>Bash</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item" data-aos="fade-left">
+                    <div class="timeline-marker">
+                        <span class="timeline-step">2</span>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-badge beginner">Boshlang'ich</div>
+                        <h3>Kiberxavfsizlik Asoslari</h3>
+                        <p>Xavfsizlik tushunchalari, kriptografiya, autentifikatsiya, CIA triada, xavf tahlili</p>
+                        <div class="timeline-duration"><i class="fas fa-calendar"></i> 2-3 oy</div>
+                        <div class="timeline-skills">
+                            <span>CompTIA Security+</span><span>Kriptografiya</span><span>Risk Management</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item" data-aos="fade-right">
+                    <div class="timeline-marker">
+                        <span class="timeline-step">3</span>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-badge intermediate">O'rta</div>
+                        <h3>Yo'nalishni Tanlash</h3>
+                        <p>Offensive Security (Red Team) yoki Defensive Security (Blue Team) yo'nalishlaridan birini tanlang</p>
+                        <div class="timeline-duration"><i class="fas fa-calendar"></i> 4-6 oy</div>
+                        <div class="timeline-skills">
+                            <span>Red Team</span><span>Blue Team</span><span>Web Security</span><span>Forensics</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item" data-aos="fade-left">
+                    <div class="timeline-marker">
+                        <span class="timeline-step">4</span>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-badge intermediate">O'rta</div>
+                        <h3>Amaliy Tajriba</h3>
+                        <p>CTF musobaqalari, Bug Bounty dasturlari, real loyihalar ustida ishlash va portfolio yaratish</p>
+                        <div class="timeline-duration"><i class="fas fa-calendar"></i> 3-6 oy</div>
+                        <div class="timeline-skills">
+                            <span>HackTheBox</span><span>Bug Bounty</span><span>CTF</span><span>Portfolio</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline-item" data-aos="fade-right">
+                    <div class="timeline-marker">
+                        <span class="timeline-step">5</span>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-badge advanced">Professional</div>
+                        <h3>Sertifikatsiya va Karyera</h3>
+                        <p>Xalqaro sertifikatlar (OSCP, CEH, CISSP), ish topish va professional rivojlanish</p>
+                        <div class="timeline-duration"><i class="fas fa-calendar"></i> Uzluksiz</div>
+                        <div class="timeline-skills">
+                            <span>OSCP</span><span>CEH</span><span>CISSP</span><span>Karyera</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== PRICING ==================== -->
+    <section id="pricing" class="pricing-section">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="section-badge"><i class="fas fa-tags"></i> Narxlar</span>
+                <h2 class="section-title">Ta'rifa <span class="gradient-text">Rejalari</span></h2>
+                <p class="section-subtitle">O'zingizga mos rejani tanlang va bugun boshlang</p>
+            </div>
+
+            <div class="pricing-grid">
+                <div class="pricing-card" data-aos="fade-up" data-aos-delay="0">
+                    <div class="pricing-header">
+                        <h3 class="pricing-name">Starter</h3>
+                        <div class="pricing-price">
+                            <span class="price-amount">990,000</span>
+                            <span class="price-currency">so'm/oy</span>
+                        </div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> 5 ta kursga kirish</li>
+                        <li><i class="fas fa-check"></i> Asosiy laboratoriyalar</li>
+                        <li><i class="fas fa-check"></i> Forum orqali yordam</li>
+                        <li><i class="fas fa-check"></i> Kurs materiallari</li>
+                        <li class="disabled"><i class="fas fa-times"></i> Mentor yordam</li>
+                        <li class="disabled"><i class="fas fa-times"></i> Sertifikat</li>
+                        <li class="disabled"><i class="fas fa-times"></i> Ishga joylashish</li>
+                    </ul>
+                    <button class="btn btn-outline btn-block">Boshlash</button>
+                </div>
+
+                <div class="pricing-card popular" data-aos="fade-up" data-aos-delay="100">
+                    <div class="popular-badge">🔥 Eng mashhur</div>
+                    <div class="pricing-header">
+                        <h3 class="pricing-name">Professional</h3>
+                        <div class="pricing-price">
+                            <span class="price-amount">1,990,000</span>
+                            <span class="price-currency">so'm/oy</span>
+                        </div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> Barcha kurslarga kirish</li>
+                        <li><i class="fas fa-check"></i> Professional laboratoriyalar</li>
+                        <li><i class="fas fa-check"></i> 1-on-1 Mentor yordam</li>
+                        <li><i class="fas fa-check"></i> Kurs materiallari + video</li>
+                        <li><i class="fas fa-check"></i> Sertifikat</li>
+                        <li><i class="fas fa-check"></i> CTF musobaqalari</li>
+                        <li class="disabled"><i class="fas fa-times"></i> Ishga joylashish</li>
+                    </ul>
+                    <button class="btn btn-primary btn-block btn-glow">Boshlash</button>
+                </div>
+
+                <div class="pricing-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="pricing-header">
+                        <h3 class="pricing-name">Enterprise</h3>
+                        <div class="pricing-price">
+                            <span class="price-amount">3,990,000</span>
+                            <span class="price-currency">so'm/oy</span>
+                        </div>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> Barcha kurslarga kirish</li>
+                        <li><i class="fas fa-check"></i> Premium laboratoriyalar</li>
+                        <li><i class="fas fa-check"></i> Shaxsiy mentor</li>
+                        <li><i class="fas fa-check"></i> Barcha materiallar</li>
+                        <li><i class="fas fa-check"></i> Xalqaro sertifikat</li>
+                        <li><i class="fas fa-check"></i> CTF + Real loyihalar</li>
+                        <li><i class="fas fa-check"></i> Ishga joylashish kafolati</li>
+                    </ul>
+                    <button class="btn btn-outline btn-block">Boshlash</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== INSTRUCTORS ==================== -->
+    <section id="instructors" class="instructors-section">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="section-badge"><i class="fas fa-chalkboard-teacher"></i> Jamoa</span>
+                <h2 class="section-title">Bizning <span class="gradient-text">O'qituvchilarimiz</span></h2>
+                <p class="section-subtitle">10+ yillik tajribaga ega xalqaro sertifikatlangan mutaxassislar</p>
+            </div>
+
+            <div class="instructors-grid">
+                <div class="instructor-card" data-aos="fade-up" data-aos-delay="0">
+                    <div class="instructor-avatar">
+                        <img src="https://i.pravatar.cc/200?img=11" alt="Aziz Karimov">
+                        <div class="instructor-badge"><i class="fas fa-crown"></i></div>
+                    </div>
+                    <h3 class="instructor-name">Aziz Karimov</h3>
+                    <p class="instructor-role">Lead Penetration Tester</p>
+                    <div class="instructor-certs">
+                        <span>OSCP</span><span>CEH</span><span>GPEN</span>
+                    </div>
+                    <p class="instructor-bio">12 yillik tajriba. 200+ kompaniya uchun penetration testing o'tkazgan.</p>
+                    <div class="instructor-social">
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+
+                <div class="instructor-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="instructor-avatar">
+                        <img src="https://i.pravatar.cc/200?img=32" alt="Dilnoza Rahimova">
+                        <div class="instructor-badge"><i class="fas fa-crown"></i></div>
+                    </div>
+                    <h3 class="instructor-name">Dilnoza Rahimova</h3>
+                    <p class="instructor-role">SOC Team Lead</p>
+                    <div class="instructor-certs">
+                        <span>CISSP</span><span>CISM</span><span>GCIH</span>
+                    </div>
+                    <p class="instructor-bio">10 yillik tajriba. Yirik banklarda kiberxavfsizlik bo'yicha maslahatchi.</p>
+                    <div class="instructor-social">
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+
+                <div class="instructor-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="instructor-avatar">
+                        <img src="https://i.pravatar.cc/200?img=51" alt="Jasur Toshmatov">
+                        <div class="instructor-badge"><i class="fas fa-crown"></i></div>
+                    </div>
+                    <h3 class="instructor-name">Jasur Toshmatov</h3>
+                    <p class="instructor-role">Malware Analyst</p>
+                    <div class="instructor-certs">
+                        <span>GREM</span><span>GCFA</span><span>CHFI</span>
+                    </div>
+                    <p class="instructor-bio">8 yillik tajriba. Xalqaro CTF musobaqalarida ko'p marta g'olib.</p>
+                    <div class="instructor-social">
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+
+                <div class="instructor-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="instructor-avatar">
+                        <img src="https://i.pravatar.cc/200?img=60" alt="Sardor Aliyev">
+                        <div class="instructor-badge"><i class="fas fa-crown"></i></div>
+                    </div>
+                    <h3 class="instructor-name">Sardor Aliyev</h3>
+                    <p class="instructor-role">Cloud Security Architect</p>
+                    <div class="instructor-certs">
+                        <span>AWS SAA</span><span>AZ-500</span><span>CCSP</span>
+                    </div>
+                    <p class="instructor-bio">15 yillik tajriba. Fortune 500 kompaniyalarida ishlagan.</p>
+                    <div class="instructor-social">
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== TESTIMONIALS ==================== -->
+    <section id="testimonials" class="testimonials-section">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="section-badge"><i class="fas fa-comments"></i> Fikrlar</span>
+                <h2 class="section-title">Talabalarimiz <span class="gradient-text">Fikrlari</span></h2>
+                <p class="section-subtitle">Bizning bitiruvchilarimiz nimalar deyishadi</p>
+            </div>
+
+            <div class="testimonial-slider" data-aos="fade-up">
+                <div class="testimonial-track" id="testimonialTrack">
+                    <div class="testimonial-card">
+                        <div class="testimonial-rating">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                        <p class="testimonial-text">"Cybertrip.uz menga kiberxavfsizlik sohasida karyeramni boshlashda katta yordam berdi. Kurslarning sifati va mentorlarning professional yondashuvi juda yuqori darajada."</p>
+                        <div class="testimonial-author">
+                            <img src="https://i.pravatar.cc/60?img=5" alt="Bobur">
+                            <div>
+                                <h4>Bobur Umarov</h4>
+                                <span>SOC Analyst — Payme</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="testimonial-card">
+                        <div class="testimonial-rating">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                        <p class="testimonial-text">"Penetration Testing kursini tugatganimdan so'ng, xalqaro kompaniyada ish topdim. Laboratoriya mashg'ulotlari juda foydali bo'ldi. Haqiqiy real-world tajriba oldim."</p>
+                        <div class="testimonial-author">
+                            <img src="https://i.pravatar.cc/60?img=8" alt="Shaxlo">
+                            <div>
+                                <h4>Shaxlo Nazarova</h4>
+                                <span>Penetration Tester — EPAM</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="testimonial-card">
+                        <div class="testimonial-rating">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <p class="testimonial-text">"Bug Bounty dasturi orqali birinchi mukofotimni oldim! Cybertrip.uz'dagi web security kursi menga amaliy ko'nikmalar berdi. Endi mustaqil ravishda zaifliklarni topaman."</p>
+                        <div class="testimonial-author">
+                            <img src="https://i.pravatar.cc/60?img=12" alt="Otabek">
+                            <div>
+                                <h4>Otabek Mirzayev</h4>
+                                <span>Bug Bounty Hunter</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="testimonial-card">
+                        <div class="testimonial-rating">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                        </div>
+                        <p class="testimonial-text">"Kompaniyamiz xodimlarini Cybertrip.uz orqali o'qitdik. Xavfsizlik bo'yicha bilimlar sezilarli darajada oshdi. Korporativ dastur juda samarali tashkil etilgan."</p>
+                        <div class="testimonial-author">
+                            <img src="https://i.pravatar.cc/60?img=15" alt="Kamola">
+                            <div>
+                                <h4>Kamola Yusupova</h4>
+                                <span>CISO — UzCard</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-controls">
+                    <button class="testimonial-btn prev" id="testimonialPrev">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="testimonial-dots" id="testimonialDots"></div>
+                    <button class="testimonial-btn next" id="testimonialNext">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== FAQ ==================== -->
+    <section id="faq" class="faq-section">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="section-badge"><i class="fas fa-question-circle"></i> FAQ</span>
+                <h2 class="section-title">Ko'p Beriladigan <span class="gradient-text">Savollar</span></h2>
+                <p class="section-subtitle">Eng ko'p so'raladigan savollarga javoblar</p>
+            </div>
+
+            <div class="faq-container" data-aos="fade-up">
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Kurslarni boshlash uchun oldindan bilim kerakmi?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Yo'q, bizning "Boshlang'ich" darajadagi kurslarimiz noldan boshlanadi. Siz kompyuter bilan ishlash bo'yicha asosiy bilimga ega bo'lsangiz kifoya. Biz sizni bosqichma-bosqich professional darajaga olib chiqamiz.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Kurslar qancha davom etadi?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Kurslar 2 oydan 6 oygacha davom etadi, kurs darajasiga qarab. Har bir kurs o'z tezligida o'tilishi mumkin. Barcha materiallarga cheksiz kirish imkoniyati beriladi.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Online formatda o'qish mumkinmi?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Ha, barcha kurslarimiz online formatda mavjud. Siz istalgan vaqtda, istalgan joydan o'qishingiz mumkin. Jonli darslar ham Zoom orqali o'tkaziladi va yozib olinadi.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Sertifikat beriladimi?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Ha, Professional va Enterprise rejalaridagi barcha kurslarni muvaffaqiyatli tugatgandan so'ng sertifikat beriladi. Bundan tashqari, xalqaro sertifikatlash imtihonlariga tayyorgarlik kurslari ham mavjud.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>To'lov qanday amalga oshiriladi?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>To'lov Click, Payme, Uzum Bank va bank o'tkazmasi orqali amalga oshiriladi. Bo'lib-bo'lib to'lash imkoniyati ham mavjud. 7 kunlik bepul sinov davrini ham taklif qilamiz.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question">
+                        <span>Ishga joylashishda yordam beriladimi?</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Ha, Enterprise rejasida ishga joylashish kafolati mavjud. Biz 50+ hamkor kompaniya bilan ishlaymiz. Resume tayyorlash, intervyuga tayyorgarlik va ish joylarini tavsiya qilish xizmatlarini ko'rsatamiz.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== CTA SECTION ==================== -->
+    <section id="cta" class="cta-section">
+        <div class="container">
+            <div class="cta-content" data-aos="fade-up">
+                <div class="cta-icon">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <h2>Kiberxavfsizlik Bo'yicha <span class="gradient-text">Karyerangizni</span> Bugun Boshlang!</h2>
+                <p>7 kunlik bepul sinov davridan foydalaning. Hech qanday majburiyat yo'q.</p>
+                <div class="cta-buttons">
+                    <button class="btn btn-primary btn-lg btn-glow" id="ctaRegisterBtn">
+                        <i class="fas fa-user-plus"></i> Bepul Boshlash
+                    </button>
+                    <a href="https://t.me/cybertripuz" class="btn btn-outline btn-lg" target="_blank">
+                        <i class="fab fa-telegram"></i> Telegram Guruh
+                    </a>
+                </div>
+                <div class="cta-features">
+                    <span><i class="fas fa-check-circle"></i> 7 kun bepul</span>
+                    <span><i class="fas fa-check-circle"></i> Karta kerak emas</span>
+                    <span><i class="fas fa-check-circle"></i> Istalgan vaqt bekor qilish</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== CONTACT ==================== -->
+    <section id="contact" class="contact-section">
+        <div class="container">
+            <div class="section-header" data-aos="fade-up">
+                <span class="section-badge"><i class="fas fa-envelope"></i> Bog'lanish</span>
+                <h2 class="section-title">Biz Bilan <span class="gradient-text">Bog'laning</span></h2>
+                <p class="section-subtitle">Savollaringiz bormi? Biz yordam berishga tayyormiz!</p>
+            </div>
+
+            <div class="contact-grid">
+                <div class="contact-info" data-aos="fade-right">
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div>
+                            <h4>Manzil</h4>
+                            <p>Toshkent shahar, Mirzo Ulug'bek tumani, <br>IT Park binosi, 3-qavat</p>
+                        </div>
+                    </div>
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-phone-alt"></i>
+                        </div>
+                        <div>
+                            <h4>Telefon</h4>
+                            <p>+998 90 123 45 67<br>+998 71 200 00 00</p>
+                        </div>
+                    </div>
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div>
+                            <h4>Email</h4>
+                            <p>info@cybertrip.uz<br>support@cybertrip.uz</p>
+                        </div>
+                    </div>
+                    <div class="contact-card">
+                        <div class="contact-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div>
+                            <h4>Ish vaqti</h4>
+                            <p>Dushanba - Shanba: 09:00 - 20:00<br>Yakshanba: Dam olish kuni</p>
+                        </div>
+                    </div>
+
+                    <div class="contact-social">
+                        <a href="https://t.me/cybertripuz" class="social-link telegram" target="_blank">
+                            <i class="fab fa-telegram"></i>
+                        </a>
+                        <a href="#" class="social-link instagram">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="social-link youtube">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                        <a href="#" class="social-link linkedin">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        <a href="#" class="social-link github">
+                            <i class="fab fa-github"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="contact-form-wrapper" data-aos="fade-left">
+                    <form class="contact-form" id="contactForm">
+                        <div class="form-group">
+                            <label for="contactName">Ismingiz</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-user"></i>
+                                <input type="text" id="contactName" placeholder="Ismingizni kiriting" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactEmail">Email</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-envelope"></i>
+                                <input type="email" id="contactEmail" placeholder="email@example.com" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactPhone">Telefon raqam</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-phone"></i>
+                                <input type="tel" id="contactPhone" placeholder="+998 90 123 45 67">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactSubject">Mavzu</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-tag"></i>
+                                <select id="contactSubject">
+                                    <option value="">Tanlang...</option>
+                                    <option value="course">Kurslar haqida</option>
+                                    <option value="pricing">Narxlar haqida</option>
+                                    <option value="corporate">Korporativ dastur</option>
+                                    <option value="other">Boshqa</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="contactMessage">Xabar</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-comment-alt"></i>
+                                <textarea id="contactMessage" rows="4" placeholder="Xabaringizni yozing..." required></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg btn-block">
+                            <i class="fas fa-paper-plane"></i> Xabar Yuborish
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div class="footer-wave">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100">
+                <path fill="currentColor" d="M0,40 C480,100 960,0 1440,60 L1440,100 L0,100 Z"></path>
+            </svg>
+        </div>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-about">
+                    <a href="#" class="footer-logo">
+                        <i class="fas fa-shield-halved"></i>
+                        <span>Cyber<span class="logo-accent">trip</span>.uz</span>
+                    </a>
+                    <p>O'zbekistonning yetakchi kiberxavfsizlik ta'lim platformasi. Professional kurslar, amaliy laboratoriyalar va xalqaro sertifikatlar.</p>
+                    <div class="footer-newsletter">
+                        <h4>Yangiliklardan xabardor bo'ling</h4>
+                        <form class="newsletter-form" id="newsletterForm">
+                            <input type="email" placeholder="Email manzilingiz" required>
+                            <button type="submit"><i class="fas fa-arrow-right"></i></button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Kurslar</h4>
+                    <ul>
+                        <li><a href="#">Ethical Hacking</a></li>
+                        <li><a href="#">Web Security</a></li>
+                        <li><a href="#">Penetration Testing</a></li>
+                        <li><a href="#">SOC Analyst</a></li>
+                        <li><a href="#">Cloud Security</a></li>
+                        <li><a href="#">Malware Analysis</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Kompaniya</h4>
+                    <ul>
+                        <li><a href="#">Biz haqimizda</a></li>
+                        <li><a href="#">Jamoa</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Karyera</a></li>
+                        <li><a href="#">Hamkorlik</a></li>
+                        <li><a href="#">Bog'lanish</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Resurslar</h4>
+                    <ul>
+                        <li><a href="#">Bepul darslar</a></li>
+                        <li><a href="#">Blog maqolalari</a></li>
+                        <li><a href="#">CTF platformasi</a></li>
+                        <li><a href="#">Foydalanish shartlari</a></li>
+                        <li><a href="#">Maxfiylik siyosati</a></li>
+                        <li><a href="#">FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2024-2026 Cybertrip.uz — Barcha huquqlar himoyalangan</p>
+                <div class="footer-bottom-links">
+                    <a href="#">Foydalanish shartlari</a>
+                    <a href="#">Maxfiylik siyosati</a>
+                    <a href="#">Cookie siyosati</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==================== MODALS ==================== -->
+    <!-- Registration Modal -->
+    <div class="modal-overlay" id="registerModal">
+        <div class="modal">
+            <button class="modal-close" id="registerModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <h2>Ro'yxatdan O'tish</h2>
+                <p>Kiberxavfsizlik sayohatingizni boshlang</p>
+            </div>
+            <form class="modal-form" id="registerForm">
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <i class="fas fa-user"></i>
+                        <input type="text" placeholder="To'liq ismingiz" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" placeholder="Email manzilingiz" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <i class="fas fa-phone"></i>
+                        <input type="tel" placeholder="+998 90 123 45 67" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" placeholder="Parol" required id="registerPassword">
+                    </div>
+                    <div class="password-strength" id="passwordStrength">
+                        <div class="strength-bar"><div class="strength-fill"></div></div>
+                        <span class="strength-text">Parol kuchini kiriting</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" placeholder="Parolni tasdiqlang" required>
+                    </div>
+                </div>
+                <div class="form-checkbox">
+                    <input type="checkbox" id="agreeTerms" required>
+                    <label for="agreeTerms">
+                        <a href="#">Foydalanish shartlari</a> va <a href="#">Maxfiylik siyosati</a>ga roziman
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                    <i class="fas fa-user-plus"></i> Ro'yxatdan O'tish
+                </button>
+                <p class="modal-footer-text">
+                    Hisobingiz bormi? <a href="#" class="switch-to-login">Kirish</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal">
+            <button class="modal-close" id="loginModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <i class="fas fa-sign-in-alt"></i>
+                </div>
+                <h2>Tizimga Kirish</h2>
+                <p>Hisobingizga kiring</p>
+            </div>
+            <form class="modal-form" id="loginForm">
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" placeholder="Email manzilingiz" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" placeholder="Parol" required>
+                    </div>
+                </div>
+                <div class="form-options">
+                    <div class="form-checkbox">
+                        <input type="checkbox" id="rememberMe">
+                        <label for="rememberMe">Eslab qolish</label>
+                    </div>
+                    <a href="#" class="forgot-password">Parolni unutdingizmi?</a>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block btn-lg">
+                    <i class="fas fa-sign-in-alt"></i> Kirish
+                </button>
+                <div class="social-login">
+                    <p>Yoki ijtimoiy tarmoq orqali</p>
+                    <div class="social-buttons">
+                        <button type="button" class="social-btn google">
+                            <i class="fab fa-google"></i> Google
+                        </button>
+                        <button type="button" class="social-btn github">
+                            <i class="fab fa-github"></i> GitHub
+                        </button>
+                    </div>
+                </div>
+                <p class="modal-footer-text">
+                    Hisobingiz yo'qmi? <a href="#" class="switch-to-register">Ro'yxatdan o'tish</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== SUCCESS NOTIFICATION ==================== -->
+    <div class="notification" id="notification">
+        <div class="notification-content">
+            <i class="fas fa-check-circle"></i>
+            <span id="notificationText">Muvaffaqiyatli!</span>
+        </div>
+    </div>
+
+    <!-- ==================== BACK TO TOP ==================== -->
+    <button class="back-to-top" id="backToTop" title="Yuqoriga">
+        <i class="fas fa-chevron-up"></i>
+    </button>
+
+    <!-- AOS Animation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+
+    <!-- Main Script -->
+    <script src="js/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediaVault — Bulutli Fayl Xotirasi</title>
+    <style>
+        :root { --mv-bg: #0b0f19; --mv-card: #151d30; --mv-border: #23304c; --mv-primary: #ec4899; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: var(--mv-bg); color: #f8fafc; padding: 1.5rem; }
+        .container { max-width: 850px; margin: 0 auto; }
+        .header { background: var(--mv-card); border: 1px solid var(--mv-border); border-radius: 0.5rem; padding: 1rem 1.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .card { background: var(--mv-card); border: 1px solid var(--mv-border); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .dropzone { border: 2px dashed #475569; border-radius: 0.5rem; padding: 2.5rem; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+        .dropzone:hover { border-color: var(--mv-primary); }
+        .file-list { margin-top: 1.5rem; }
+        .file-item { background: #0e1424; border: 1px solid var(--mv-border); padding: 0.75rem 1rem; border-radius: 0.375rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .btn { background: var(--mv-primary); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 0.25rem; font-size: 0.8rem; cursor: pointer; text-decoration: none; }
+        .terminal-box { background: #050811; border: 1px solid #1e293b; padding: 1rem; border-radius: 0.375rem; font-family: monospace; font-size: 0.85rem; color: #a7f3d0; margin-top: 1rem; display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2 style="color: #f472b6; font-size: 1.25rem;">📁 MediaVault — Unrestricted File Upload Lab</h2>
+            <span style="font-size: 0.75rem; background: rgba(236, 72, 153, 0.2); color: #fbcfe8; padding: 0.25rem 0.5rem; border-radius: 0.25rem;">Storage: /var/www/uploads</span>
+        </div>
+
+        <div style="background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.3); color: #fbcfe8; padding: 0.75rem 1rem; border-radius: 0.375rem; font-size: 0.85rem; margin-bottom: 1.5rem;">
+            🎯 <strong>Laboratoriya maqsadi:</strong> Ushbu fayl yuklash xizmatida kengaytma va MIME-type tekshiruvi yetarli emas. Web-shell (<code>.php</code> yoki <code>.phtml</code>) faylini yuklang va serverda masofaviy kodni (RCE) bajarib flagni oling.
+        </div>
+
+        <div class="card">
+            <h3 style="font-size: 1rem; margin-bottom: 1rem;">Fayl yuklash</h3>
+            <div class="dropzone" onclick="document.getElementById('fileInput').click()">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📤</div>
+                <div style="font-weight: 600;">Faylni tanlang yoki shu yerga tashlang</div>
+                <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.25rem;">(Hajmi: 5MB gacha)</div>
+                <input type="file" id="fileInput" style="display:none;" onchange="handleFileUpload(event)">
+            </div>
+
+            <div class="file-list">
+                <h4 style="font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.5rem;">Yuklangan fayllar:</h4>
+                <div id="uploadedFiles">
+                    <div class="file-item">
+                        <span>📄 avatar_default.png (42 KB)</span>
+                        <span style="font-size:0.75rem; color:#64748b;">/uploads/avatar_default.png</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="terminal-box" id="execTerminal"></div>
+        </div>
+    </div>
+
+    <script>
+        const FLAG = "FLAG{unrestricted_file_upload_rce_shell_1337}";
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const name = file.name;
+            const container = document.getElementById('uploadedFiles');
+            const item = document.createElement('div');
+            item.className = 'file-item';
+            
+            const isScript = name.endsWith('.php') || name.endsWith('.phtml') || name.endsWith('.php5');
+            const fileUrl = `/uploads/${name}`;
+
+            item.innerHTML = `
+                <span>${isScript ? '⚡' : '📄'} ${name} (${(file.size/1024).toFixed(1)} KB)</span>
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <span style="font-size:0.75rem; color:#64748b;">${fileUrl}</span>
+                    <button class="btn" onclick="executeFile('${name}', ${isScript})">Ochish / Execute</button>
+                </div>
+            `;
+            container.appendChild(item);
+
+            if (isScript) {
+                notifyParentLab('shell_uploaded', { fileName: name });
+            }
+        }
+
+        function executeFile(name, isScript) {
+            const term = document.getElementById('execTerminal');
+            term.style.display = 'block';
+
+            if (isScript) {
+                term.innerHTML = `
+                    <div style="color:#f43f5e; font-weight:bold; margin-bottom:0.5rem;">[⚡ PHP WEB-SHELL EXECUTED ON SERVER: /uploads/${name}]</div>
+                    <div>uid=33(www-data) gid=33(www-data)</div>
+                    <div>Linux cybertrip-lab-host 5.15.0-89-generic x86_64</div>
+                    <div style="margin-top:0.5rem; color:#facc15;">$ cat /secret_flag.txt</div>
+                    <div style="font-size:1.1rem; color:#4ade80; font-weight:bold; margin-top:0.25rem;">${FLAG}</div>
+                `;
+                notifyParentLab('shell_executed_flag', { flag: FLAG, script: name });
+            } else {
+                term.innerHTML = `<span style="color:#94a3b8;">Fayl muvaffaqiyatli ochildi: /uploads/${name} (Statik resurs)</span>`;
+            }
+        }
+
+        function notifyParentLab(type, data) {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'lab_evidence',
+                    labId: 'fileupload-mediavault',
+                    evidence: { type, data, timestamp: new Date().toISOString() }
+                }, '*');
+            }
+        }
+    </script>
+</body>
+</html>

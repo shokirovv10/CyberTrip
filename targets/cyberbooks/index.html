@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberBooks — Onlayn Kitob Do'koni</title>
+    <style>
+        /* ============================================
+         * CyberBooks — Intentionally Vulnerable Target App
+         * SQL Injection Training Laboratory
+         * 
+         * THIS APPLICATION IS INTENTIONALLY VULNERABLE.
+         * It exists solely for educational purposes within
+         * the CYBERTRIP.UZ isolated lab environment.
+         * 
+         * DO NOT deploy this application to production.
+         * ============================================ */
+
+        :root {
+            --cb-primary: #2563eb;
+            --cb-primary-hover: #1d4ed8;
+            --cb-bg: #ffffff;
+            --cb-bg-alt: #f8fafc;
+            --cb-text: #1e293b;
+            --cb-text-muted: #64748b;
+            --cb-border: #e2e8f0;
+            --cb-success: #16a34a;
+            --cb-danger: #dc2626;
+            --cb-warning: #d97706;
+            --cb-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--cb-bg-alt);
+            color: var(--cb-text);
+            line-height: 1.6;
+        }
+
+        /* ── Header ── */
+        .cb-header {
+            background: var(--cb-bg);
+            border-bottom: 1px solid var(--cb-border);
+            box-shadow: var(--cb-shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .cb-header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .cb-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--cb-text);
+        }
+
+        .cb-logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--cb-primary);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .cb-logo-text {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .cb-nav {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .cb-nav a {
+            text-decoration: none;
+            color: var(--cb-text-muted);
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .cb-nav a:hover, .cb-nav a.active {
+            color: var(--cb-primary);
+        }
+
+        .cb-user-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cb-user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e0e7ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--cb-primary);
+        }
+
+        /* ── Search Bar ── */
+        .cb-search-section {
+            background: var(--cb-primary);
+            padding: 40px 24px;
+        }
+
+        .cb-search-inner {
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .cb-search-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .cb-search-form {
+            display: flex;
+            gap: 8px;
+        }
+
+        .cb-search-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .cb-search-btn {
+            padding: 12px 24px;
+            background: #1e40af;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .cb-search-btn:hover {
+            background: #1e3a8a;
+        }
+
+        /* ── Categories ── */
+        .cb-categories {
+            max-width: 1200px;
+            margin: 24px auto;
+            padding: 0 24px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .cb-category-chip {
+            padding: 6px 16px;
+            background: var(--cb-bg);
+            border: 1px solid var(--cb-border);
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--cb-text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .cb-category-chip:hover, .cb-category-chip.active {
+            background: var(--cb-primary);
+            color: white;
+            border-color: var(--cb-primary);
+        }
+
+        /* ── Book Grid ── */
+        .cb-main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .cb-section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .cb-book-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .cb-book-card {
+            background: var(--cb-bg);
+            border: 1px solid var(--cb-border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .cb-book-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
+        .cb-book-cover {
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .cb-book-info {
+            padding: 16px;
+        }
+
+        .cb-book-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+
+        .cb-book-author {
+            font-size: 13px;
+            color: var(--cb-text-muted);
+            margin-bottom: 8px;
+        }
+
+        .cb-book-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cb-book-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--cb-primary);
+        }
+
+        .cb-book-rating {
+            font-size: 12px;
+            color: var(--cb-warning);
+        }
+
+        /* ── Book Detail ── */
+        .cb-detail-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 24px;
+            display: none;
+        }
+
+        .cb-detail-container.visible { display: block; }
+
+        .cb-detail-card {
+            background: var(--cb-bg);
+            border-radius: 12px;
+            border: 1px solid var(--cb-border);
+            padding: 32px;
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 32px;
+        }
+
+        .cb-detail-cover {
+            width: 250px;
+            height: 350px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 72px;
+        }
+
+        .cb-detail-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .cb-detail-author {
+            font-size: 15px;
+            color: var(--cb-text-muted);
+            margin-bottom: 16px;
+        }
+
+        .cb-detail-desc {
+            font-size: 14px;
+            color: var(--cb-text);
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .cb-detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .cb-detail-table td {
+            padding: 8px 0;
+            font-size: 14px;
+            border-bottom: 1px solid var(--cb-border);
+        }
+
+        .cb-detail-table td:first-child {
+            color: var(--cb-text-muted);
+            width: 120px;
+        }
+
+        .cb-add-cart-btn {
+            padding: 12px 32px;
+            background: var(--cb-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .cb-add-cart-btn:hover {
+            background: var(--cb-primary-hover);
+        }
+
+        /* ── Login Page ── */
+        .cb-login-container {
+            max-width: 420px;
+            margin: 60px auto;
+            padding: 0 24px;
+            display: none;
+        }
+
+        .cb-login-container.visible { display: block; }
+
+        .cb-login-card {
+            background: var(--cb-bg);
+            border-radius: 12px;
+            border: 1px solid var(--cb-border);
+            padding: 32px;
+        }
+
+        .cb-login-title {
+            font-size: 22px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .cb-form-group {
+            margin-bottom: 16px;
+        }
+
+        .cb-form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--cb-text);
+        }
+
+        .cb-form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--cb-border);
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .cb-form-input:focus {
+            border-color: var(--cb-primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .cb-login-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--cb-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        /* ── Error/Success Messages ── */
+        .cb-message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .cb-message.error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: var(--cb-danger);
+            display: block;
+        }
+
+        .cb-message.success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: var(--cb-success);
+            display: block;
+        }
+
+        .cb-message.info {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: var(--cb-primary);
+            display: block;
+        }
+
+        /* ── SQL Error Display (intentional) ── */
+        .cb-sql-error {
+            background: #1e293b;
+            color: #f87171;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 16px 0;
+            white-space: pre-wrap;
+            word-break: break-all;
+            display: none;
+        }
+
+        .cb-sql-error.visible {
+            display: block;
+        }
+
+        /* ── Results Table ── */
+        .cb-results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            background: var(--cb-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--cb-border);
+        }
+
+        .cb-results-table th {
+            background: var(--cb-bg-alt);
+            padding: 10px 14px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--cb-text-muted);
+            border-bottom: 1px solid var(--cb-border);
+        }
+
+        .cb-results-table td {
+            padding: 10px 14px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--cb-border);
+        }
+
+        .cb-results-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* ── Admin Panel (hidden) ── */
+        .cb-admin-panel {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 24px;
+            display: none;
+        }
+
+        .cb-admin-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .cb-admin-badge.admin { background: #fee2e2; color: #dc2626; }
+        .cb-admin-badge.user { background: #e0e7ff; color: #4338ca; }
+
+        /* ── Footer ── */
+        .cb-footer {
+            background: var(--cb-bg);
+            border-top: 1px solid var(--cb-border);
+            padding: 24px;
+            margin-top: 60px;
+            text-align: center;
+            font-size: 13px;
+            color: var(--cb-text-muted);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .cb-detail-card { grid-template-columns: 1fr; }
+            .cb-detail-cover { width: 100%; height: 250px; }
+            .cb-nav { display: none; }
+            .cb-book-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+            .cb-search-form { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 
+        ============================================
+        CyberBooks — SQL Injection Target Application
+        ============================================
+        
+        CYBERTRIP.UZ Lab Target
+        Category: SQL Injection
+        
+        INTENTIONALLY VULNERABLE for educational purposes.
+        
+        Vulnerability Points:
+        1. Search input — Union-based SQL injection
+        2. Login form — Authentication bypass via SQLi
+        3. Book detail — Parameterized ID, but category filter is vulnerable
+        4. Hidden admin panel accessible via SQLi
+        
+        Learning Objectives:
+        - Understand how SQL Injection works
+        - Practice UNION-based injection
+        - Extract data from database
+        - Bypass authentication
+        - Understand why parameterized queries matter
+        
+        Evidence Required:
+        - Extract the admin user's email from the users table
+        - Bypass login without knowing the password
+        - Retrieve the secret flag from the flags table
+    -->
+
+    <!-- Header -->
+    <header class="cb-header">
+        <div class="cb-header-inner">
+            <a href="#" class="cb-logo" onclick="showPage('home')">
+                <div class="cb-logo-icon">📚</div>
+                <span class="cb-logo-text">CyberBooks</span>
+            </a>
+            <nav class="cb-nav">
+                <a href="#" class="active" onclick="showPage('home')">Kitoblar</a>
+                <a href="#" onclick="showPage('home'); filterCategory('Dasturlash')">Dasturlash</a>
+                <a href="#" onclick="showPage('home'); filterCategory('Xavfsizlik')">Xavfsizlik</a>
+                <a href="#" onclick="showPage('home'); filterCategory('Tarmoq')">Tarmoq</a>
+                <a href="#" onclick="showPage('login')">Kirish</a>
+            </nav>
+            <div class="cb-user-menu">
+                <div class="cb-user-avatar" id="userAvatar" style="display:none;">M</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search Section -->
+    <section class="cb-search-section" id="searchSection">
+        <div class="cb-search-inner">
+            <h1 class="cb-search-title">Kitoblar orasidan qidiring</h1>
+            <form class="cb-search-form" onsubmit="searchBooks(event)">
+                <input type="text" class="cb-search-input" id="searchInput" 
+                       placeholder="Kitob nomi, muallif yoki mavzu bo'yicha qidiring...">
+                <button type="submit" class="cb-search-btn">Qidirish</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Categories -->
+    <div class="cb-categories" id="categoriesSection">
+        <a class="cb-category-chip active" onclick="filterCategory('all')">Barchasi</a>
+        <a class="cb-category-chip" onclick="filterCategory('Dasturlash')">💻 Dasturlash</a>
+        <a class="cb-category-chip" onclick="filterCategory('Xavfsizlik')">🔒 Xavfsizlik</a>
+        <a class="cb-category-chip" onclick="filterCategory('Tarmoq')">🌐 Tarmoq</a>
+        <a class="cb-category-chip" onclick="filterCategory('Ma\'lumotlar bazasi')">🗄️ Ma'lumotlar bazasi</a>
+        <a class="cb-category-chip" onclick="filterCategory('Sun\'iy intellekt')">🤖 Sun'iy intellekt</a>
+        <a class="cb-category-chip" onclick="filterCategory('DevOps')">⚙️ DevOps</a>
+    </div>
+
+    <!-- Main Content — Book Listing -->
+    <main class="cb-main" id="bookListing">
+        <div class="cb-section-title">
+            <span id="sectionTitle">Barcha Kitoblar</span>
+            <span style="font-size:14px; color:var(--cb-text-muted)" id="resultCount"></span>
+        </div>
+
+        <!-- SQL Error Display (shown when injection causes error) -->
+        <div class="cb-sql-error" id="sqlError"></div>
+
+        <!-- Search Results Message -->
+        <div class="cb-message" id="searchMessage"></div>
+
+        <!-- Results Table (shown for UNION-based injection) -->
+        <div id="unionResults" style="display:none;">
+            <table class="cb-results-table" id="resultsTable">
+                <thead><tr id="resultsHead"></tr></thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Book Grid -->
+        <div class="cb-book-grid" id="bookGrid"></div>
+    </main>
+
+    <!-- Book Detail View -->
+    <div class="cb-detail-container" id="bookDetail">
+        <a href="#" onclick="showPage('home')" style="color:var(--cb-primary); text-decoration:none; font-size:14px; display:inline-block; margin-bottom:16px;">← Orqaga</a>
+        <div class="cb-detail-card" id="detailContent"></div>
+    </div>
+
+    <!-- Login Page -->
+    <div class="cb-login-container" id="loginPage">
+        <div class="cb-login-card">
+            <h2 class="cb-login-title">CyberBooks — Kirish</h2>
+            <div class="cb-message" id="loginMessage"></div>
+            <form onsubmit="loginUser(event)">
+                <div class="cb-form-group">
+                    <label class="cb-form-label">Email</label>
+                    <input type="text" class="cb-form-input" id="loginEmail" 
+                           placeholder="email@example.com" autocomplete="off">
+                </div>
+                <div class="cb-form-group">
+                    <label class="cb-form-label">Parol</label>
+                    <input type="password" class="cb-form-input" id="loginPassword" 
+                           placeholder="Parolingiz" autocomplete="off">
+                </div>
+                <button type="submit" class="cb-login-btn">Kirish</button>
+            </form>
+            <p style="text-align:center; margin-top:16px; font-size:13px; color:var(--cb-text-muted)">
+                Test foydalanuvchi: user@cyberbooks.uz / password123
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="cb-footer">
+        <p>© 2024 CyberBooks — Onlayn Kitob Do'koni</p>
+        <p style="margin-top:4px; font-size:11px; color:#94a3b8;">
+            Bu ilova CYBERTRIP.UZ ta'lim laboratoriyasining bir qismidir
+        </p>
+    </footer>
+
+    <script>
+    // ============================================
+    // CyberBooks — Simulated Backend
+    // ============================================
+    // This simulates a vulnerable server-side application.
+    // In production, this would be a real server with a real database.
+    // The SQL injection simulation demonstrates the concept for learning.
+    
+    // ── Simulated Database ──
+    const DB = {
+        books: [
+            { id: 1, title: "Python Dasturlash Asoslari", author: "Aziz Karimov", category: "Dasturlash", price: 85000, rating: 4.8, isbn: "978-9943-01-001", year: 2024, description: "Python dasturlash tilining to'liq qo'llanmasi. Boshlang'ich darajadan murakkab mavzulargacha.", cover_color: "#3b82f6" },
+            { id: 2, title: "Kiberxavfsizlik: Amaliy Qo'llanma", author: "Dilnoza Rahimova", category: "Xavfsizlik", price: 120000, rating: 4.9, isbn: "978-9943-01-002", year: 2024, description: "Zamonaviy kiberxavfsizlik texnikalari va amaliy mashg'ulotlar.", cover_color: "#ef4444" },
+            { id: 3, title: "SQL va Ma'lumotlar Bazasi", author: "Jasur Toshmatov", category: "Ma'lumotlar bazasi", price: 75000, rating: 4.5, isbn: "978-9943-01-003", year: 2023, description: "SQL tili va relyatsion ma'lumotlar bazalarini boshqarish.", cover_color: "#f59e0b" },
+            { id: 4, title: "Tarmoq Protokollari", author: "Sardor Aliyev", category: "Tarmoq", price: 95000, rating: 4.7, isbn: "978-9943-01-004", year: 2024, description: "TCP/IP, DNS, HTTP va boshqa tarmoq protokollarining ishlash prinsipi.", cover_color: "#10b981" },
+            { id: 5, title: "JavaScript Zamonaviy Dasturlash", author: "Bobur Umarov", category: "Dasturlash", price: 90000, rating: 4.6, isbn: "978-9943-01-005", year: 2024, description: "ES2024, React, Node.js va zamonaviy JavaScript ekotizimi.", cover_color: "#eab308" },
+            { id: 6, title: "Linux Tizim Ma'muriyati", author: "Kamola Yusupova", category: "Xavfsizlik", price: 110000, rating: 4.8, isbn: "978-9943-01-006", year: 2023, description: "Linux operatsion tizimini boshqarish va xavfsizligini ta'minlash.", cover_color: "#8b5cf6" },
+            { id: 7, title: "Web Ilovalar Xavfsizligi", author: "Otabek Mirzayev", category: "Xavfsizlik", price: 130000, rating: 4.9, isbn: "978-9943-01-007", year: 2024, description: "OWASP Top 10, penetration testing va web zaifliklarni aniqlash.", cover_color: "#06b6d4" },
+            { id: 8, title: "Docker va Kubernetes", author: "Shaxlo Nazarova", category: "DevOps", price: 105000, rating: 4.7, isbn: "978-9943-01-008", year: 2024, description: "Konteynerlashtirish va orkestratsiya texnologiyalari.", cover_color: "#0ea5e9" },
+            { id: 9, title: "Algoritmlar va Ma'lumotlar Tuzilmasi", author: "Farrux Qodirov", category: "Dasturlash", price: 95000, rating: 4.6, isbn: "978-9943-01-009", year: 2023, description: "Algoritmik fikrlash va samarali dasturlar yozish san'ati.", cover_color: "#d946ef" },
+            { id: 10, title: "Sun'iy Intellekt Asoslari", author: "Malika Abdullayeva", category: "Sun'iy intellekt", price: 140000, rating: 4.8, isbn: "978-9943-01-010", year: 2024, description: "Machine learning, deep learning va neural tarmoqlar.", cover_color: "#f43f5e" },
+            { id: 11, title: "Ethical Hacking va Pentest", author: "Nodir Kamolov", category: "Xavfsizlik", price: 150000, rating: 4.9, isbn: "978-9943-01-011", year: 2024, description: "Professional penetration testing metodologiyalari va asboblari.", cover_color: "#14b8a6" },
+            { id: 12, title: "Kompyuter Tarmoqlari", author: "Rustam Yuldashev", category: "Tarmoq", price: 88000, rating: 4.4, isbn: "978-9943-01-012", year: 2023, description: "Tarmoq arxitekturasi, marshrutlash va kommutatsiya.", cover_color: "#a855f7" },
+        ],
+        users: [
+            { id: 1, email: "admin@cyberbooks.uz", username: "admin", password: "Sup3rS3cur3P@ss!", role: "admin", name: "Administrator" },
+            { id: 2, email: "user@cyberbooks.uz", username: "user1", password: "password123", role: "user", name: "Test Foydalanuvchi" },
+            { id: 3, email: "manager@cyberbooks.uz", username: "manager", password: "M@nager2024", role: "manager", name: "Kitob Menejeri" },
+        ],
+        flags: [
+            { id: 1, name: "sql_injection_flag", value: "FLAG{sql_1nj3ct10n_m4st3r_2024}", description: "SQL Injection lab flag" },
+        ],
+        orders: [
+            { id: 1, user_id: 1, book_id: 7, quantity: 2, total: 260000, status: "delivered" },
+            { id: 2, user_id: 2, book_id: 1, quantity: 1, total: 85000, status: "pending" },
+            { id: 3, user_id: 1, book_id: 11, quantity: 1, total: 150000, status: "shipped" },
+        ]
+    };
+
+    let currentUser = null;
+
+    // ── Simulated SQL Query Engine ──
+    // This simulates how a vulnerable SQL query processor works
+    function simulateQuery(input, context) {
+        const result = { type: 'normal', data: [], error: null, columns: [] };
+        
+        // Detect SQL injection patterns
+        const lowerInput = input.toLowerCase().trim();
+        
+        // Check for UNION-based injection
+        if (lowerInput.includes('union') && lowerInput.includes('select')) {
+            return handleUnionInjection(input, lowerInput);
+        }
+        
+        // Check for error-based injection (single quote)
+        if (input.includes("'") && !lowerInput.includes('union')) {
+            // Simulate SQL syntax error
+            if (input.split("'").length % 2 === 0) {
+                result.type = 'error';
+                result.error = `ERROR: syntax error at or near "'"\nLINE 1: SELECT * FROM books WHERE title LIKE '%${input}%' OR author LIKE '%${input}%'\n                                                              ^\nHint: Unterminated string literal\nQuery: SELECT * FROM books WHERE title LIKE '%${input}%' OR author LIKE '%${input}%'`;
+                return result;
+            }
+        }
+        
+        // Check for boolean-based blind injection
+        if (lowerInput.includes("' or '1'='1") || lowerInput.includes("' or 1=1")) {
+            result.type = 'normal';
+            result.data = DB.books;
+            return result;
+        }
+        
+        // Check for comment-based injection
+        if (lowerInput.includes('--') || lowerInput.includes('#')) {
+            const beforeComment = input.split('--')[0].split('#')[0].trim();
+            if (beforeComment.endsWith("'") || beforeComment.endsWith("' ")) {
+                result.type = 'normal';
+                result.data = DB.books;
+                return result;
+            }
+        }
+
+        // Normal search
+        if (context === 'search') {
+            result.data = DB.books.filter(b => 
+                b.title.toLowerCase().includes(lowerInput) || 
+                b.author.toLowerCase().includes(lowerInput) ||
+                b.category.toLowerCase().includes(lowerInput)
+            );
+        }
+        
+        return result;
+    }
+
+    function handleUnionInjection(input, lower) {
+        const result = { type: 'union', data: [], error: null, columns: [] };
+        
+        try {
+            // Extract the SELECT part after UNION
+            const unionMatch = lower.match(/union\s+(all\s+)?select\s+(.+)/i);
+            if (!unionMatch) {
+                result.type = 'error';
+                result.error = 'ERROR: UNION query must have same number of columns';
+                return result;
+            }
+            
+            const selectPart = unionMatch[2];
+            const columns = selectPart.split(',').map(c => c.trim());
+            
+            // Simulate extracting data based on what's in the SELECT
+            if (lower.includes('table_name') && lower.includes('information_schema')) {
+                result.columns = ['table_name'];
+                result.data = [
+                    { table_name: 'books' },
+                    { table_name: 'users' },
+                    { table_name: 'orders' },
+                    { table_name: 'flags' },
+                    { table_name: 'sessions' },
+                ];
+                return result;
+            }
+            
+            if (lower.includes('column_name') && lower.includes('information_schema')) {
+                if (lower.includes("'users'")) {
+                    result.columns = ['column_name'];
+                    result.data = [
+                        { column_name: 'id' },
+                        { column_name: 'email' },
+                        { column_name: 'username' },
+                        { column_name: 'password' },
+                        { column_name: 'role' },
+                        { column_name: 'name' },
+                    ];
+                } else if (lower.includes("'flags'")) {
+                    result.columns = ['column_name'];
+                    result.data = [
+                        { column_name: 'id' },
+                        { column_name: 'name' },
+                        { column_name: 'value' },
+                        { column_name: 'description' },
+                    ];
+                } else {
+                    result.columns = ['column_name'];
+                    result.data = [
+                        { column_name: 'id' },
+                        { column_name: 'title' },
+                        { column_name: 'author' },
+                        { column_name: 'category' },
+                        { column_name: 'price' },
+                    ];
+                }
+                return result;
+            }
+            
+            // Extract from users table
+            if (lower.includes('from users') || lower.includes('from  users')) {
+                const extractFields = parseSelectFields(selectPart);
+                result.columns = extractFields;
+                result.data = DB.users.map(u => {
+                    const row = {};
+                    extractFields.forEach(f => {
+                        if (u[f] !== undefined) row[f] = u[f];
+                        else row[f] = 'NULL';
+                    });
+                    return row;
+                });
+                return result;
+            }
+            
+            // Extract from flags table
+            if (lower.includes('from flags') || lower.includes('from  flags')) {
+                const extractFields = parseSelectFields(selectPart);
+                result.columns = extractFields;
+                result.data = DB.flags.map(f => {
+                    const row = {};
+                    extractFields.forEach(field => {
+                        if (f[field] !== undefined) row[field] = f[field];
+                        else row[field] = 'NULL';
+                    });
+                    return row;
+                });
+                return result;
+            }
+            
+            // Extract from orders table
+            if (lower.includes('from orders') || lower.includes('from  orders')) {
+                result.columns = ['id', 'user_id', 'book_id', 'total', 'status'];
+                result.data = DB.orders;
+                return result;
+            }
+            
+            // Generic column count detection
+            if (columns.every(c => c === 'null' || /^\d+$/.test(c))) {
+                result.columns = columns.map((_, i) => `column_${i + 1}`);
+                result.data = [{}];
+                columns.forEach((c, i) => {
+                    result.data[0][`column_${i + 1}`] = c === 'null' ? 'NULL' : c;
+                });
+                return result;
+            }
+            
+            // Default: show the injected values
+            result.columns = columns.map((c, i) => `col${i + 1}`);
+            result.data = [{}];
+            columns.forEach((c, i) => {
+                result.data[0][`col${i + 1}`] = c.replace(/['"]/g, '');
+            });
+            return result;
+            
+        } catch (e) {
+            result.type = 'error';
+            result.error = `ERROR: Invalid UNION query syntax\n${e.message}`;
+            return result;
+        }
+    }
+
+    function parseSelectFields(selectPart) {
+        // Extract field names from SELECT part, handling "from table" suffix
+        const fromIdx = selectPart.toLowerCase().indexOf(' from ');
+        const fieldsPart = fromIdx > -1 ? selectPart.substring(0, fromIdx) : selectPart;
+        return fieldsPart.split(',')
+            .map(f => f.trim().split('.').pop().split(' as ').pop().trim())
+            .filter(f => f.length > 0);
+    }
+
+    // ── Simulated Login (vulnerable to SQLi) ──
+    function simulateLogin(email, password) {
+        const lowerEmail = email.toLowerCase();
+        
+        // SQL injection in login
+        // Simulates: SELECT * FROM users WHERE email = '{email}' AND password = '{password}'
+        
+        // Check for ' OR '1'='1 style bypass
+        if (email.includes("'") && (
+            lowerEmail.includes("or") || 
+            lowerEmail.includes("=") ||
+            lowerEmail.includes("--") ||
+            lowerEmail.includes("#")
+        )) {
+            // Authentication bypass — return first user (admin)
+            return { success: true, user: DB.users[0], bypassed: true };
+        }
+        
+        if (password.includes("'") && (
+            password.toLowerCase().includes("or") || 
+            password.includes("=") ||
+            password.includes("--") ||
+            password.includes("#")
+        )) {
+            return { success: true, user: DB.users[0], bypassed: true };
+        }
+        
+        // Normal login
+        const user = DB.users.find(u => u.email === email && u.password === password);
+        if (user) {
+            return { success: true, user, bypassed: false };
+        }
+        
+        return { success: false, user: null, bypassed: false };
+    }
+
+    // ── UI Functions ──
+    
+    function showPage(page) {
+        document.getElementById('bookListing').style.display = page === 'home' ? 'block' : 'none';
+        document.getElementById('searchSection').style.display = page === 'home' ? 'block' : 'none';
+        document.getElementById('categoriesSection').style.display = page === 'home' ? 'flex' : 'none';
+        document.getElementById('bookDetail').classList.toggle('visible', page === 'detail');
+        document.getElementById('loginPage').classList.toggle('visible', page === 'login');
+        
+        if (page === 'home') {
+            renderBooks(DB.books);
+            document.getElementById('sectionTitle').textContent = 'Barcha Kitoblar';
+        }
+    }
+
+    function renderBooks(books) {
+        const grid = document.getElementById('bookGrid');
+        grid.style.display = 'grid';
+        document.getElementById('unionResults').style.display = 'none';
+        document.getElementById('sqlError').classList.remove('visible');
+        document.getElementById('searchMessage').className = 'cb-message';
+        document.getElementById('resultCount').textContent = `${books.length} ta kitob`;
+        
+        grid.innerHTML = books.map(book => `
+            <div class="cb-book-card" onclick="showBookDetail(${book.id})">
+                <div class="cb-book-cover" style="background:${book.cover_color}20">
+                    <span style="color:${book.cover_color}">📖</span>
+                </div>
+                <div class="cb-book-info">
+                    <div class="cb-book-title">${escapeHtml(book.title)}</div>
+                    <div class="cb-book-author">${escapeHtml(book.author)}</div>
+                    <div class="cb-book-meta">
+                        <span class="cb-book-price">${formatPrice(book.price)} so'm</span>
+                        <span class="cb-book-rating">★ ${book.rating}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function showBookDetail(id) {
+        const book = DB.books.find(b => b.id === id);
+        if (!book) return;
+        
+        showPage('detail');
+        document.getElementById('detailContent').innerHTML = `
+            <div class="cb-detail-cover" style="background:${book.cover_color}15">
+                <span style="color:${book.cover_color}">📖</span>
+            </div>
+            <div>
+                <h1 class="cb-detail-title">${escapeHtml(book.title)}</h1>
+                <p class="cb-detail-author">${escapeHtml(book.author)}</p>
+                <p class="cb-detail-desc">${escapeHtml(book.description)}</p>
+                <table class="cb-detail-table">
+                    <tr><td>Narxi</td><td><strong>${formatPrice(book.price)} so'm</strong></td></tr>
+                    <tr><td>ISBN</td><td>${book.isbn}</td></tr>
+                    <tr><td>Yili</td><td>${book.year}</td></tr>
+                    <tr><td>Kategoriya</td><td>${escapeHtml(book.category)}</td></tr>
+                    <tr><td>Reyting</td><td>★ ${book.rating} / 5.0</td></tr>
+                </table>
+                <button class="cb-add-cart-btn" onclick="alert('Savatga qo\\'shildi!')">
+                    🛒 Savatga qo'shish
+                </button>
+            </div>
+        `;
+    }
+
+    function searchBooks(e) {
+        e.preventDefault();
+        const query = document.getElementById('searchInput').value;
+        
+        if (!query.trim()) {
+            renderBooks(DB.books);
+            return;
+        }
+        
+        const result = simulateQuery(query, 'search');
+        const grid = document.getElementById('bookGrid');
+        
+        if (result.type === 'error') {
+            grid.innerHTML = '';
+            grid.style.display = 'none';
+            document.getElementById('unionResults').style.display = 'none';
+            const sqlError = document.getElementById('sqlError');
+            sqlError.textContent = result.error;
+            sqlError.classList.add('visible');
+            document.getElementById('resultCount').textContent = '';
+            document.getElementById('sectionTitle').textContent = 'Qidiruv natijalari';
+        } else if (result.type === 'union') {
+            grid.innerHTML = '';
+            grid.style.display = 'none';
+            document.getElementById('sqlError').classList.remove('visible');
+            
+            const unionResults = document.getElementById('unionResults');
+            unionResults.style.display = 'block';
+            
+            const thead = document.getElementById('resultsHead');
+            const tbody = document.getElementById('resultsBody');
+            
+            thead.innerHTML = result.columns.map(c => `<th>${escapeHtml(c)}</th>`).join('');
+            tbody.innerHTML = result.data.map(row => 
+                '<tr>' + result.columns.map(c => `<td>${escapeHtml(String(row[c] || ''))}</td>`).join('') + '</tr>'
+            ).join('');
+            
+            document.getElementById('resultCount').textContent = `${result.data.length} ta natija`;
+            document.getElementById('sectionTitle').textContent = 'Qidiruv natijalari';
+            
+            // Report to parent (CyberTrip lab session)
+            reportEvidence('union_injection', query, result.data);
+        } else {
+            renderBooks(result.data);
+            document.getElementById('sectionTitle').textContent = `"${query}" uchun natijalar`;
+        }
+    }
+
+    function filterCategory(category) {
+        document.querySelectorAll('.cb-category-chip').forEach(c => c.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        if (category === 'all') {
+            renderBooks(DB.books);
+            document.getElementById('sectionTitle').textContent = 'Barcha Kitoblar';
+        } else {
+            const filtered = DB.books.filter(b => b.category === category);
+            renderBooks(filtered);
+            document.getElementById('sectionTitle').textContent = `${category} Kitoblari`;
+        }
+    }
+
+    function loginUser(e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const msgEl = document.getElementById('loginMessage');
+        
+        const result = simulateLogin(email, password);
+        
+        if (result.success) {
+            currentUser = result.user;
+            document.getElementById('userAvatar').textContent = result.user.name[0];
+            document.getElementById('userAvatar').style.display = 'flex';
+            
+            if (result.bypassed) {
+                msgEl.className = 'cb-message success';
+                msgEl.innerHTML = `
+                    <strong>⚠️ Autentifikatsiya chetlab o'tildi!</strong><br>
+                    Siz <strong>${result.user.name}</strong> (${result.user.role}) sifatida kirdingiz.<br>
+                    <small>SQL Injection orqali autentifikatsiya bypass amalga oshirildi.</small>
+                `;
+                reportEvidence('auth_bypass', email, { user: result.user.email, role: result.user.role });
+            } else {
+                msgEl.className = 'cb-message success';
+                msgEl.textContent = `Xush kelibsiz, ${result.user.name}!`;
+                setTimeout(() => showPage('home'), 1500);
+            }
+        } else {
+            msgEl.className = 'cb-message error';
+            msgEl.textContent = 'Noto\'g\'ri email yoki parol. Qayta urinib ko\'ring.';
+        }
+    }
+
+    // ── Evidence Reporting (to parent CyberTrip platform) ──
+    function reportEvidence(type, payload, extractedData) {
+        // Send evidence to the parent CyberTrip platform
+        if (window.parent && window.parent !== window) {
+            window.parent.postMessage({
+                type: 'lab_evidence',
+                labId: 'sql-injection-cyberbooks',
+                evidence: {
+                    type,
+                    payload,
+                    extractedData,
+                    timestamp: new Date().toISOString()
+                }
+            }, '*');
+        }
+        
+        // Also log to console for debugging
+        console.log('[CyberBooks Lab] Evidence:', { type, payload, extractedData });
+    }
+
+    // ── Helpers ──
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function formatPrice(price) {
+        return price.toLocaleString('uz-UZ');
+    }
+
+    // ── Initialize ──
+    renderBooks(DB.books);
+    </script>
+</body>
+</html>

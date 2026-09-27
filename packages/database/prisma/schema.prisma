@@ -1,0 +1,1361 @@
+// =======================================================
+// CYBERTRIP.UZ — Master Database Schema (Prisma)
+// PostgreSQL 16 + Relational Multi-Domain Architecture
+// =======================================================
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// =======================================================
+// ENUMS
+// =======================================================
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  MODERATOR
+  ADMIN
+}
+
+enum ContentStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum TournamentStatus {
+  UPCOMING
+  REGISTRATION_OPEN
+  ONGOING
+  CONCLUDED
+  CANCELLED
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+}
+
+enum LabCategory {
+  SQL_INJECTION
+  XSS
+  IDOR
+  SSRF
+  XXE
+  SSTI
+  PATH_TRAVERSAL
+  FILE_UPLOAD
+  COMMAND_INJECTION
+  AUTHENTICATION
+  JWT
+  BUSINESS_LOGIC
+  RACE_CONDITION
+  GRAPHQL
+  WEBSOCKET
+  CORS
+  CSRF
+  OPEN_REDIRECT
+  MISCONFIGURATION
+  LINUX
+  NETWORKING
+  FORENSICS
+  OSINT
+  CRYPTOGRAPHY
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum LabSessionStatus {
+  CREATED
+  STARTING
+  RUNNING
+  EVIDENCE_REQUIRED
+  VALIDATING
+  COMPLETED
+  EXPIRED
+  RESET
+  TERMINATED
+}
+
+enum CTFCategory {
+  WEB
+  CRYPTO
+  FORENSICS
+  LINUX
+  NETWORK
+  OSINT
+  REVERSE_ENGINEERING
+  MISC
+}
+
+enum FlagType {
+  STATIC
+  DYNAMIC
+}
+
+enum XPSource {
+  LESSON_COMPLETE
+  QUIZ_PASS
+  LAB_COMPLETE
+  CTF_FLAG
+  TOURNAMENT_WIN
+  FIRST_BLOOD
+  DAILY_STREAK
+  ACHIEVEMENT
+  COURSE_COMPLETE
+  PATH_COMPLETE
+}
+
+enum CertificateType {
+  COURSE
+  PATH
+  PROFESSIONAL
+  TOURNAMENT
+}
+
+enum CertificateStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum NotificationType {
+  ACHIEVEMENT
+  COURSE_UPDATE
+  LAB_COMPLETE
+  CTF_EVENT
+  TOURNAMENT_ALERT
+  SUBSCRIPTION_UPDATE
+  SYSTEM
+  CERTIFICATE
+}
+
+enum ChatRoomType {
+  GLOBAL
+  TOURNAMENT
+  TEAM
+  CHALLENGE
+}
+
+enum TeamRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum CompanyRole {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum PlanType {
+  INDIVIDUAL
+  BUSINESS
+}
+
+// =======================================================
+// 1. USERS, AUTH & SECURITY
+// =======================================================
+
+model User {
+  id            String    @id @default(uuid()) @db.Uuid
+  email         String    @unique
+  username      String    @unique
+  displayName   String
+  passwordHash  String
+  role          Role      @default(STUDENT)
+  avatarUrl     String?
+  bio           String?   @db.Text
+  isActive      Boolean   @default(true)
+  emailVerified Boolean   @default(false)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  // Relations
+  sessions                Session[]
+  auditLogs               AuditLog[]
+  subscriptions           Subscription[]
+  payments                Payment[]
+  invoices                Invoice[]
+  userEntitlements        UserEntitlement[]
+  pathProgress            UserLearningPathProgress[]
+  courseProgress          UserCourseProgress[]
+  lessonProgress          UserLessonProgress[]
+  quizAttempts            QuizAttempt[]
+  labSessions             LabSession[]
+  labSubmissions          LabSubmission[]
+  ctfSubmissions          CTFSubmission[]
+  eventParticipants       CTFEventParticipant[]
+  tournamentParticipants  TournamentParticipant[]
+  tournamentSubmissions   TournamentSubmission[]
+  captainTeams            TournamentTeam[]           @relation("TeamCaptain")
+  xpTransactions          XPTransaction[]
+  gamification            UserGamification?
+  achievements            UserAchievement[]
+  certificates            Certificate[]
+  authoredArticles        KnowledgeArticle[]
+  notifications           Notification[]
+  chatMemberships         ChatMember[]
+  chatMessages            ChatMessage[]
+
+  // Teams
+  ownedTeams              Team[]                    @relation("TeamOwner")
+  teamMemberships         TeamMember[]
+  sentTeamInvitations     TeamInvitation[]          @relation("TeamInviter")
+  
+  // Companies
+  companyMemberships      CompanyMember[]
+
+  // Instructors & Cohorts
+  instructorCohorts       InstructorCohort[]        @relation("InstructorUser")
+  studentCohorts          InstructorStudent[]       @relation("StudentUser")
+
+  // Hints
+  unlockedLabHints        LabHintUnlock[]
+
+  @@index([email])
+  @@index([username])
+  @@map("users")
+}
+
+model Session {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  tokenHash    String    @unique
+  familyId     String    @default(uuid()) @db.Uuid
+  ipAddress    String?
+  userAgent    String?
+  isRevoked    Boolean   @default(false)
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("sessions")
+}
+
+model AuditLog {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String?   @db.Uuid
+  action     String
+  resource   String
+  resourceId String?
+  metadata   Json?     @db.JsonB
+  ipAddress  String?
+  createdAt  DateTime  @default(now())
+
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([resource, resourceId])
+  @@map("audit_logs")
+}
+
+// =======================================================
+// 2. SUBSCRIPTIONS, PLANS & ENTITLEMENTS (FREE + PREMIUM)
+// =======================================================
+
+model Plan {
+  id            String         @id @default(uuid()) @db.Uuid
+  code          String         @unique // FREE, PRO, PREMIUM, TEAM, BUSINESS, ENTERPRISE
+  type          PlanType       @default(INDIVIDUAL)
+  name          String
+  description   String?        @db.Text
+  priceMonthly  Int            @default(0) // in UZS (0 for free)
+  priceAnnual   Int            @default(0)
+  seatCount     Int            @default(1)
+  interval      String         @default("monthly")
+  isActive      Boolean        @default(true)
+  limits        Json?          @db.JsonB // { terminalHours: 10, labLimit: 50 }
+  order         Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  subscriptions Subscription[]
+  entitlements  PlanEntitlement[]
+  companySubscriptions CompanySubscription[]
+
+  @@map("plans")
+}
+
+model Entitlement {
+  id            String            @id @default(uuid()) @db.Uuid
+  code          String            @unique // e.g., LAB_BASIC, LAB_ADVANCED, TERMINAL_EXTENDED, TOURNAMENT_ACCESS
+  name          String
+  description   String?
+  createdAt     DateTime          @default(now())
+
+  plans         PlanEntitlement[]
+  users         UserEntitlement[]
+
+  @@map("entitlements")
+}
+
+model PlanEntitlement {
+  id            String       @id @default(uuid()) @db.Uuid
+  planId        String       @db.Uuid
+  entitlementId String       @db.Uuid
+
+  plan          Plan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+  entitlement   Entitlement  @relation(fields: [entitlementId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, entitlementId])
+  @@map("plan_entitlements")
+}
+
+model UserEntitlement {
+  id            String       @id @default(uuid()) @db.Uuid
+  userId        String       @db.Uuid
+  entitlementId String       @db.Uuid
+  grantedAt     DateTime     @default(now())
+  expiresAt     DateTime?
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entitlement   Entitlement  @relation(fields: [entitlementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entitlementId])
+  @@map("user_entitlements")
+}
+
+model Subscription {
+  id                 String             @id @default(uuid()) @db.Uuid
+  userId             String             @db.Uuid
+  planId             String             @db.Uuid
+  status             SubscriptionStatus @default(ACTIVE)
+  currentPeriodStart DateTime           @default(now())
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  canceledAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan               Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+  payments           Payment[]
+  invoices           Invoice[]
+
+  @@index([userId])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id             String         @id @default(uuid()) @db.Uuid
+  userId         String         @db.Uuid
+  subscriptionId String?        @db.Uuid
+  amount         Int            // in UZS
+  currency       String         @default("UZS")
+  status         PaymentStatus  @default(PENDING)
+  provider       String         @default("bank_card") // bank_card
+  cardBrand      String?        // Visa, Mastercard, Uzcard, Humo
+  cardLast4      String?        // 4920
+  cardExp        String?        // 12/28
+  providerTxId   String?        @unique
+  metadata       Json?          @db.JsonB
+  createdAt      DateTime       @default(now())
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription   Subscription?  @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("payments")
+}
+
+model Invoice {
+  id             String         @id @default(uuid()) @db.Uuid
+  userId         String         @db.Uuid
+  subscriptionId String?        @db.Uuid
+  invoiceNumber  String         @unique
+  amount         Int
+  currency       String         @default("UZS")
+  pdfUrl         String?
+  paidAt         DateTime?
+  createdAt      DateTime       @default(now())
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription   Subscription?  @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("invoices")
+}
+
+// =======================================================
+// 3. LEARNING SYSTEM (COURSES, MODULES, LESSONS, QUIZZES)
+// =======================================================
+
+model LearningPath {
+  id             String                     @id @default(uuid()) @db.Uuid
+  slug           String                     @unique
+  title          String
+  description    String                     @db.Text
+  icon           String
+  difficulty     Difficulty                 @default(BEGINNER)
+  estimatedHours Int                        @default(20)
+  order          Int                        @default(0)
+  status         ContentStatus              @default(DRAFT)
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+
+  courses        Course[]
+  certificates   Certificate[]
+  userProgress   UserLearningPathProgress[]
+
+  @@map("learning_paths")
+}
+
+model Course {
+  id             String               @id @default(uuid()) @db.Uuid
+  slug           String               @unique
+  learningPathId String               @db.Uuid
+  title          String
+  description    String               @db.Text
+  prerequisites  String?              @db.Text
+  difficulty     Difficulty           @default(BEGINNER)
+  estimatedHours Int                  @default(5)
+  order          Int                  @default(0)
+  isPremium      Boolean              @default(false)
+  status         ContentStatus        @default(DRAFT)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  learningPath   LearningPath         @relation(fields: [learningPathId], references: [id], onDelete: Cascade)
+  modules        Module[]
+  certificates   Certificate[]
+  userProgress   UserCourseProgress[]
+
+  @@index([learningPathId])
+  @@map("courses")
+}
+
+model Module {
+  id          String        @id @default(uuid()) @db.Uuid
+  courseId    String        @db.Uuid
+  title       String
+  description String?       @db.Text
+  order       Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  course      Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+  quizzes     Quiz[]
+
+  @@index([courseId])
+  @@map("modules")
+}
+
+model Lesson {
+  id               String               @id @default(uuid()) @db.Uuid
+  moduleId         String               @db.Uuid
+  slug             String
+  title            String
+  contentMdx       String               @db.Text
+  summary          String?              @db.Text
+  estimatedMinutes Int                  @default(15)
+  xpReward         Int                  @default(50)
+  order            Int                  @default(0)
+  isPremium        Boolean              @default(false)
+  status           ContentStatus        @default(DRAFT)
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  module           Module               @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  quizzes          Quiz[]
+  userProgress     UserLessonProgress[]
+
+  @@unique([moduleId, slug])
+  @@map("lessons")
+}
+
+model Quiz {
+  id           String         @id @default(uuid()) @db.Uuid
+  lessonId     String?        @db.Uuid
+  moduleId     String?        @db.Uuid
+  title        String
+  description  String?        @db.Text
+  passingScore Int            @default(70)
+  timeLimit    Int?
+  xpReward     Int            @default(50)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  lesson       Lesson?        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  module       Module?        @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  questions    QuizQuestion[]
+  attempts     QuizAttempt[]
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id           String       @id @default(uuid()) @db.Uuid
+  quizId       String       @db.Uuid
+  questionText String       @db.Text
+  questionType QuestionType @default(SINGLE_CHOICE)
+  explanation  String?      @db.Text
+  order        Int          @default(0)
+  points       Int          @default(10)
+
+  quiz         Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  answers      QuizAnswer[]
+
+  @@index([quizId])
+  @@map("quiz_questions")
+}
+
+model QuizAnswer {
+  id         String       @id @default(uuid()) @db.Uuid
+  questionId String       @db.Uuid
+  answerText String       @db.Text
+  isCorrect  Boolean      @default(false)
+  order      Int          @default(0)
+
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@map("quiz_answers")
+}
+
+model QuizAttempt {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  quizId      String    @db.Uuid
+  score       Int
+  passed      Boolean
+  answersJson Json?     @db.JsonB
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz        Quiz      @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([quizId])
+  @@map("quiz_attempts")
+}
+
+model UserLearningPathProgress {
+  id              String       @id @default(uuid()) @db.Uuid
+  userId          String       @db.Uuid
+  learningPathId  String       @db.Uuid
+  progressPercent Int          @default(0)
+  startedAt       DateTime     @default(now())
+  completedAt     DateTime?
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  learningPath    LearningPath @relation(fields: [learningPathId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, learningPathId])
+  @@map("user_learning_path_progress")
+}
+
+model UserCourseProgress {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @db.Uuid
+  courseId        String    @db.Uuid
+  progressPercent Int       @default(0)
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("user_course_progress")
+}
+
+model UserLessonProgress {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  lessonId         String    @db.Uuid
+  completed        Boolean   @default(false)
+  timeSpentSeconds Int       @default(0)
+  completedAt      DateTime?
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson           Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("user_lesson_progress")
+}
+
+// =======================================================
+// 4. CYBER RANGE & LAB SYSTEM (TARGET APPLICATIONS)
+// =======================================================
+
+model Lab {
+  id               String         @id @default(uuid()) @db.Uuid
+  slug             String         @unique
+  title            String
+  description      String         @db.Text
+  briefing         String         @db.Text
+  category         LabCategory
+  difficulty       Difficulty     @default(BEGINNER)
+  estimatedMinutes Int            @default(30)
+  xpReward         Int            @default(200)
+  targetApp        String         // e.g. cyberbooks, cyberforum, securedocs
+  entryRoute       String         @default("/targets/cyberbooks/index.html")
+  objectives       Json           @db.JsonB
+  prerequisites    String?        @db.Text
+  isPremium        Boolean        @default(false)
+  status           ContentStatus  @default(DRAFT)
+  order            Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  versions         LabVersion[]
+  sessions         LabSession[]
+  submissions      LabSubmission[]
+  hints            LabHint[]
+
+  @@map("labs")
+}
+
+model LabVersion {
+  id             String       @id @default(uuid()) @db.Uuid
+  labId          String       @db.Uuid
+  version        String       @default("1.0.0")
+  changelog      String?      @db.Text
+  containerImage String?
+  configJson     Json?        @db.JsonB
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  lab            Lab          @relation(fields: [labId], references: [id], onDelete: Cascade)
+  sessions       LabSession[]
+
+  @@unique([labId, version])
+  @@map("lab_versions")
+}
+
+model LabSession {
+  id             String           @id @default(uuid()) @db.Uuid
+  userId         String           @db.Uuid
+  labId          String           @db.Uuid
+  labVersionId   String?          @db.Uuid
+  status         LabSessionStatus @default(CREATED)
+  environmentUrl String?
+  metadata       Json?            @db.JsonB
+  startedAt      DateTime         @default(now())
+  lastActivityAt DateTime         @default(now())
+  expiresAt      DateTime
+  completedAt    DateTime?
+
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lab            Lab              @relation(fields: [labId], references: [id], onDelete: Cascade)
+  version        LabVersion?      @relation(fields: [labVersionId], references: [id], onDelete: SetNull)
+  evidence       LabEvidence[]
+  submissions    LabSubmission[]
+
+  @@index([userId])
+  @@index([labId])
+  @@index([status])
+  @@map("lab_sessions")
+}
+
+model LabEvidence {
+  id             String     @id @default(uuid()) @db.Uuid
+  sessionId      String     @db.Uuid
+  objectiveIndex Int
+  evidenceType   String     // payload, extracted_data, auth_bypass
+  evidenceData   String     @db.Text
+  submittedAt    DateTime   @default(now())
+  validated      Boolean    @default(false)
+
+  session        LabSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("lab_evidence")
+}
+
+model LabSubmission {
+  id          String     @id @default(uuid()) @db.Uuid
+  sessionId   String     @db.Uuid
+  userId      String     @db.Uuid
+  labId       String     @db.Uuid
+  isCorrect   Boolean
+  feedback    String?    @db.Text
+  xpAwarded   Int        @default(0)
+  submittedAt DateTime   @default(now())
+
+  session     LabSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lab         Lab        @relation(fields: [labId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([labId])
+  @@map("lab_submissions")
+}
+
+// =======================================================
+// 5. CTF ARENA SYSTEM (CHALLENGES & SCORING)
+// =======================================================
+
+model CTFChallenge {
+  id            String                  @id @default(uuid()) @db.Uuid
+  slug          String                  @unique
+  title         String
+  description   String                  @db.Text
+  category      CTFCategory
+  difficulty    Difficulty              @default(BEGINNER)
+  initialPoints Int                     @default(200)
+  minPoints     Int                     @default(50)
+  decayFactor   Int                     @default(20)
+  flagHash      String                  // Bcrypt hash of secret flag
+  flagType      FlagType                @default(STATIC)
+  hints         Json?                   @db.JsonB
+  files         Json?                   @db.JsonB
+  environment   Json?                   @db.JsonB
+  isPremium     Boolean                 @default(false)
+  isActive      Boolean                 @default(true)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+
+  submissions   CTFSubmission[]
+  eventLinks    CTFEventChallenge[]
+  tournaments   TournamentChallenge[]
+
+  @@map("ctf_challenges")
+}
+
+model CTFEvent {
+  id              String                @id @default(uuid()) @db.Uuid
+  slug            String                @unique
+  title           String
+  description     String                @db.Text
+  startDate       DateTime
+  endDate         DateTime
+  isActive        Boolean               @default(true)
+  maxParticipants Int?
+  rules           String?               @db.Text
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  challenges      CTFEventChallenge[]
+  submissions     CTFSubmission[]
+  participants    CTFEventParticipant[]
+
+  @@map("ctf_events")
+}
+
+model CTFEventChallenge {
+  id          String       @id @default(uuid()) @db.Uuid
+  eventId     String       @db.Uuid
+  challengeId String       @db.Uuid
+  order       Int          @default(0)
+  bonusPoints Int          @default(0)
+
+  event       CTFEvent     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  challenge   CTFChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, challengeId])
+  @@map("ctf_event_challenges")
+}
+
+model CTFSubmission {
+  id            String       @id @default(uuid()) @db.Uuid
+  userId        String       @db.Uuid
+  challengeId   String       @db.Uuid
+  eventId       String?      @db.Uuid
+  submittedFlag String
+  isCorrect     Boolean
+  pointsAwarded Int          @default(0)
+  isFirstBlood  Boolean      @default(false)
+  ipAddress     String?
+  attemptNumber Int          @default(1)
+  createdAt     DateTime     @default(now())
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge     CTFChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  event         CTFEvent?    @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([challengeId])
+  @@map("ctf_submissions")
+}
+
+model CTFEventParticipant {
+  id           String    @id @default(uuid()) @db.Uuid
+  eventId      String    @db.Uuid
+  userId       String    @db.Uuid
+  registeredAt DateTime  @default(now())
+  totalPoints  Int       @default(0)
+  rank         Int?
+
+  event        CTFEvent  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("ctf_event_participants")
+}
+
+// =======================================================
+// 6. TOURNAMENTS ECOSYSTEM
+// =======================================================
+
+model Tournament {
+  id                   String                  @id @default(uuid()) @db.Uuid
+  slug                 String                  @unique
+  title                String
+  description          String                  @db.Text
+  bannerUrl            String?
+  startDate            DateTime
+  endDate              DateTime
+  registrationDeadline DateTime
+  status               TournamentStatus        @default(UPCOMING)
+  maxParticipants      Int?
+  rules                String                  @db.Text
+  prizePool            String?
+  isTeamBased          Boolean                 @default(false)
+  isPremiumOnly        Boolean                 @default(false)
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+
+  participants         TournamentParticipant[]
+  teams                TournamentTeam[]
+  challenges           TournamentChallenge[]
+  submissions          TournamentSubmission[]
+  announcements        TournamentAnnouncement[]
+  chatRooms            ChatRoom[]
+
+  @@map("tournaments")
+}
+
+model TournamentParticipant {
+  id           String          @id @default(uuid()) @db.Uuid
+  tournamentId String          @db.Uuid
+  userId       String          @db.Uuid
+  teamId       String?         @db.Uuid
+  registeredAt DateTime        @default(now())
+  score        Int             @default(0)
+  rank         Int?
+
+  tournament   Tournament      @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team         TournamentTeam? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@unique([tournamentId, userId])
+  @@map("tournament_participants")
+}
+
+model TournamentTeam {
+  id           String                  @id @default(uuid()) @db.Uuid
+  tournamentId String                  @db.Uuid
+  name         String
+  captainId    String                  @db.Uuid
+  inviteCode   String                  @unique
+  score        Int                     @default(0)
+  rank         Int?
+  createdAt    DateTime                @default(now())
+
+  tournament   Tournament              @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  captain      User                    @relation("TeamCaptain", fields: [captainId], references: [id], onDelete: Restrict)
+  members      TournamentParticipant[]
+  submissions  TournamentSubmission[]
+
+  @@unique([tournamentId, name])
+  @@map("tournament_teams")
+}
+
+model TournamentChallenge {
+  id           String         @id @default(uuid()) @db.Uuid
+  tournamentId String         @db.Uuid
+  challengeId  String         @db.Uuid
+  points       Int            @default(100)
+  order        Int            @default(0)
+
+  tournament   Tournament     @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  challenge    CTFChallenge   @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, challengeId])
+  @@map("tournament_challenges")
+}
+
+model TournamentSubmission {
+  id            String          @id @default(uuid()) @db.Uuid
+  tournamentId  String          @db.Uuid
+  challengeId   String          @db.Uuid
+  userId        String          @db.Uuid
+  teamId        String?         @db.Uuid
+  flag          String
+  isCorrect     Boolean
+  pointsAwarded Int             @default(0)
+  createdAt     DateTime        @default(now())
+
+  tournament    Tournament      @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team          TournamentTeam? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@index([tournamentId])
+  @@map("tournament_submissions")
+}
+
+model TournamentAnnouncement {
+  id           String     @id @default(uuid()) @db.Uuid
+  tournamentId String     @db.Uuid
+  title        String
+  content      String     @db.Text
+  createdAt    DateTime   @default(now())
+
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@index([tournamentId])
+  @@map("tournament_announcements")
+}
+
+// =======================================================
+// 7. REAL-TIME CHAT & COMMUNITY MODERATION
+// =======================================================
+
+model ChatRoom {
+  id          String                 @id @default(uuid()) @db.Uuid
+  name        String
+  type        ChatRoomType           @default(GLOBAL)
+  tournamentId String?               @db.Uuid
+  teamId      String?                @db.Uuid
+  isLocked    Boolean                @default(false)
+  createdAt   DateTime               @default(now())
+
+  tournament  Tournament?            @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  team        Team?                  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  members     ChatMember[]
+  messages    ChatMessage[]
+  actions     ChatModerationAction[]
+
+  @@map("chat_rooms")
+}
+
+model ChatMember {
+  id        String    @id @default(uuid()) @db.Uuid
+  roomId    String    @db.Uuid
+  userId    String    @db.Uuid
+  role      String    @default("MEMBER") // MEMBER, MODERATOR, ADMIN
+  joinedAt  DateTime  @default(now())
+  isMuted   Boolean   @default(false)
+  mutedUntil DateTime?
+
+  room      ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@map("chat_members")
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  roomId    String   @db.Uuid
+  senderId  String   @db.Uuid
+  content   String   @db.Text
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+  @@map("chat_messages")
+}
+
+model ChatModerationAction {
+  id           String   @id @default(uuid()) @db.Uuid
+  roomId       String   @db.Uuid
+  moderatorId  String   @db.Uuid
+  targetUserId String   @db.Uuid
+  action       String   // WARN, MUTE, BAN, DELETE_MESSAGE
+  reason       String?  @db.Text
+  createdAt    DateTime @default(now())
+
+  room         ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("chat_moderation_actions")
+}
+
+// =======================================================
+// 8. GAMIFICATION & REPUTATION (XP, STREAKS, LEVELS)
+// =======================================================
+
+model XPTransaction {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @db.Uuid
+  amount        Int
+  source        XPSource
+  referenceId   String?
+  referenceType String?
+  description   String?
+  createdAt     DateTime  @default(now())
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([source])
+  @@map("xp_transactions")
+}
+
+model UserGamification {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @unique @db.Uuid
+  totalXp        Int       @default(0)
+  level          Int       @default(1)
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastActiveDate DateTime?
+  version        Int       @default(1)
+
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_gamification")
+}
+
+model Achievement {
+  id          String            @id @default(uuid()) @db.Uuid
+  code        String            @unique
+  title       String
+  description String?           @db.Text
+  iconUrl     String?
+  category    String?
+  xpReward    Int               @default(0)
+  criteria    Json?             @db.JsonB
+  order       Int               @default(0)
+  createdAt   DateTime          @default(now())
+
+  users       UserAchievement[]
+
+  @@map("achievements")
+}
+
+model UserAchievement {
+  id            String      @id @default(uuid()) @db.Uuid
+  userId        String      @db.Uuid
+  achievementId String      @db.Uuid
+  unlockedAt    DateTime    @default(now())
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@map("user_achievements")
+}
+
+// =======================================================
+// 9. CERTIFICATES & PUBLIC VERIFICATION
+// =======================================================
+
+model Certificate {
+  id              String            @id @default(uuid()) @db.Uuid
+  userId          String            @db.Uuid
+  courseId        String?           @db.Uuid
+  learningPathId  String?           @db.Uuid
+  certificateType CertificateType
+  title           String
+  recipientName   String
+  issueDate       DateTime          @default(now())
+  expiresAt       DateTime?
+  verificationId  String            @unique
+  status          CertificateStatus @default(ACTIVE)
+  metadata        Json?             @db.JsonB
+  createdAt       DateTime          @default(now())
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course          Course?           @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  learningPath    LearningPath?     @relation(fields: [learningPathId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([verificationId])
+  @@map("certificates")
+}
+
+// =======================================================
+// 10. CONTENT (KNOWLEDGE BASE, GLOSSARY, NOTIFICATIONS)
+// =======================================================
+
+model KnowledgeArticle {
+  id                 String        @id @default(uuid()) @db.Uuid
+  slug               String        @unique
+  title              String
+  content            String        @db.Text
+  summary            String?       @db.Text
+  category           String?
+  difficulty         Difficulty    @default(BEGINNER)
+  readingTimeMinutes Int           @default(5)
+  authorId           String        @db.Uuid
+  tags               String[]
+  status             ContentStatus @default(DRAFT)
+  publishedAt        DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  author             User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([authorId])
+  @@map("knowledge_articles")
+}
+
+model GlossaryTerm {
+  id           String        @id @default(uuid()) @db.Uuid
+  slug         String        @unique
+  term         String
+  definition   String        @db.Text
+  category     String?
+  relatedTerms String[]
+  status       ContentStatus @default(DRAFT)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("glossary_terms")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  title     String
+  message   String           @db.Text
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+// =======================================================
+// 11. TEAM WORKSPACE & COLLABORATION
+// =======================================================
+
+model Team {
+  id          String           @id @default(uuid()) @db.Uuid
+  slug        String           @unique
+  name        String
+  description String?          @db.Text
+  avatarUrl   String?
+  isPrivate   Boolean          @default(false)
+  inviteCode  String           @unique
+  ownerId     String           @db.Uuid
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  owner       User             @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  members     TeamMember[]
+  invitations TeamInvitation[]
+  chatRooms   ChatRoom[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id       String    @id @default(uuid()) @db.Uuid
+  teamId   String    @db.Uuid
+  userId   String    @db.Uuid
+  role     TeamRole  @default(MEMBER)
+  joinedAt DateTime  @default(now())
+
+  team     Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+model TeamInvitation {
+  id           String    @id @default(uuid()) @db.Uuid
+  teamId       String    @db.Uuid
+  inviterId    String    @db.Uuid
+  inviteeEmail String
+  status       String    @default("PENDING") // PENDING, ACCEPTED, DECLINED, EXPIRED
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+
+  team         Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  inviter      User      @relation("TeamInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@map("team_invitations")
+}
+
+// =======================================================
+// 12. COMPANY & ENTERPRISE MANAGEMENT
+// =======================================================
+
+model Company {
+  id           String                @id @default(uuid()) @db.Uuid
+  slug         String                @unique
+  name         String
+  industry     String?
+  billingEmail String
+  contactPhone String?
+  logoUrl      String?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  members      CompanyMember[]
+  subscriptions CompanySubscription[]
+  assignments  CompanyAssignment[]
+  cohorts      InstructorCohort[]
+
+  @@map("companies")
+}
+
+model CompanyMember {
+  id        String      @id @default(uuid()) @db.Uuid
+  companyId String      @db.Uuid
+  userId    String      @db.Uuid
+  role      CompanyRole @default(EMPLOYEE)
+  title     String?
+  joinedAt  DateTime    @default(now())
+
+  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, userId])
+  @@map("company_members")
+}
+
+model CompanySubscription {
+  id           String             @id @default(uuid()) @db.Uuid
+  companyId    String             @db.Uuid
+  planId       String             @db.Uuid
+  seatsTotal   Int                @default(10)
+  seatsUsed    Int                @default(0)
+  status       SubscriptionStatus @default(ACTIVE)
+  billingCycle String             @default("monthly")
+  startDate    DateTime           @default(now())
+  endDate      DateTime
+  createdAt    DateTime           @default(now())
+
+  company      Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan         Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@map("company_subscriptions")
+}
+
+model CompanyAssignment {
+  id         String    @id @default(uuid()) @db.Uuid
+  companyId  String    @db.Uuid
+  title      String
+  courseId   String?   @db.Uuid
+  labId      String?   @db.Uuid
+  assignedBy String    @db.Uuid
+  targetRole String?
+  deadline   DateTime?
+  createdAt  DateTime  @default(now())
+
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("company_assignments")
+}
+
+// =======================================================
+// 13. USTOZ / INSTRUCTOR & COHORTS
+// =======================================================
+
+model InstructorCohort {
+  id           String                 @id @default(uuid()) @db.Uuid
+  name         String
+  code         String                 @unique
+  instructorId String                 @db.Uuid
+  companyId    String?                @db.Uuid
+  description  String?                @db.Text
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  instructor   User                   @relation("InstructorUser", fields: [instructorId], references: [id], onDelete: Cascade)
+  company      Company?               @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  students     InstructorStudent[]
+  assignments  InstructorAssignment[]
+
+  @@map("instructor_cohorts")
+}
+
+model InstructorStudent {
+  id         String           @id @default(uuid()) @db.Uuid
+  cohortId   String           @db.Uuid
+  studentId  String           @db.Uuid
+  enrolledAt DateTime         @default(now())
+
+  cohort     InstructorCohort @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  student    User             @relation("StudentUser", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([cohortId, studentId])
+  @@map("instructor_students")
+}
+
+model InstructorAssignment {
+  id        String           @id @default(uuid()) @db.Uuid
+  cohortId  String           @db.Uuid
+  title     String
+  courseId  String?          @db.Uuid
+  labId     String?          @db.Uuid
+  dueAt     DateTime?
+  maxScore  Int              @default(100)
+  createdAt DateTime         @default(now())
+
+  cohort    InstructorCohort @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+
+  @@map("instructor_assignments")
+}
+
+// =======================================================
+// 14. LAB HINTS & UNLOCK ENGINE
+// =======================================================
+
+model LabHint {
+  id         String          @id @default(uuid()) @db.Uuid
+  labId      String          @db.Uuid
+  hintNumber Int             // 1, 2, 3
+  costXp     Int             @default(25)
+  content    String          @db.Text
+  createdAt  DateTime        @default(now())
+
+  lab        Lab             @relation(fields: [labId], references: [id], onDelete: Cascade)
+  unlocks    LabHintUnlock[]
+
+  @@unique([labId, hintNumber])
+  @@map("lab_hints")
+}
+
+model LabHintUnlock {
+  id         String   @id @default(uuid()) @db.Uuid
+  labHintId  String   @db.Uuid
+  userId     String   @db.Uuid
+  unlockedAt DateTime @default(now())
+
+  labHint    LabHint  @relation(fields: [labHintId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([labHintId, userId])
+  @@map("lab_hint_unlocks")
+}

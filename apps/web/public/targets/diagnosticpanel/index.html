@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Diagnostics Panel — Tarmoq Tekshiruvi</title>
+    <style>
+        :root {
+            --dp-bg: #090d16;
+            --dp-panel: #111827;
+            --dp-border: #1f2937;
+            --dp-text: #f3f4f6;
+            --dp-text-muted: #9ca3af;
+            --dp-accent: #3b82f6;
+            --dp-terminal-bg: #030712;
+            --dp-green: #10b981;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: var(--dp-bg); color: var(--dp-text); padding: 1.5rem; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { background: var(--dp-panel); border: 1px solid var(--dp-border); border-radius: 0.5rem; padding: 1rem 1.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .title { font-size: 1.25rem; font-weight: 700; color: #60a5fa; display: flex; align-items: center; gap: 0.5rem; }
+        .badge { background: rgba(59, 130, 246, 0.15); color: #93c5fd; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .card { background: var(--dp-panel); border: 1px solid var(--dp-border); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .form-row { display: flex; gap: 0.75rem; margin-top: 1rem; }
+        .input { flex: 1; background: #030712; border: 1px solid var(--dp-border); color: #fff; padding: 0.6rem 1rem; border-radius: 0.375rem; font-family: monospace; outline: none; }
+        .input:focus { border-color: var(--dp-accent); }
+        .btn { background: var(--dp-accent); color: white; border: none; padding: 0.6rem 1.25rem; border-radius: 0.375rem; font-weight: 600; cursor: pointer; }
+        .btn:hover { background: #2563eb; }
+        .terminal-window { background: var(--dp-terminal-bg); border: 1px solid #1e293b; border-radius: 0.5rem; padding: 1rem; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; min-height: 250px; color: #a5f3fc; overflow-x: auto; white-space: pre-wrap; line-height: 1.5; }
+        .terminal-header { color: #64748b; margin-bottom: 0.75rem; border-bottom: 1px solid #1e293b; padding-bottom: 0.5rem; display: flex; justify-content: space-between; }
+        .hint-box { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 0.75rem 1rem; border-radius: 0.375rem; font-size: 0.8rem; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">
+                <span>⚡</span> DiagnosticPanel — Server Utility v2.1
+            </div>
+            <span class="badge">Host: 10.0.4.15 (Ubuntu 22.04 LTS)</span>
+        </div>
+
+        <div class="hint-box">
+            🎯 <strong>Laboratoriya maqsadi:</strong> Ushbu diagnostika vositasi foydalanuvchi kiritgan host manzilini to'g'ridan-to'g'ri `ping -c 3 {host}` buyrug'iga uzatadi. Command Injection orqali server fayllarini tekshiring va `/secret/flag.txt` faylini o'qing.
+        </div>
+
+        <div class="card">
+            <label style="font-size:0.875rem; color:#9ca3af; font-weight:600;">Server aloqasini tekshirish (Ping):</label>
+            <form class="form-row" onsubmit="executePing(event)">
+                <input type="text" id="hostInput" class="input" value="127.0.0.1" placeholder="IP yoki domen: masalan, 8.8.8.8">
+                <button type="submit" class="btn">Tekshirish</button>
+            </form>
+        </div>
+
+        <div class="terminal-window" id="terminalOut">
+            <div class="terminal-header">
+                <span>sh-5.1$ ping -c 3 127.0.0.1</span>
+                <span>STATUS: IDLE</span>
+            </div>
+            <div id="outputContent">Kiritish maydoniga manzil kiriting va 'Tekshirish' tugmasini bosing...</div>
+        </div>
+    </div>
+
+    <script>
+        function executePing(e) {
+            e.preventDefault();
+            const rawInput = document.getElementById('hostInput').value;
+            const output = document.getElementById('outputContent');
+            output.textContent = "Tekshirilmoqda...";
+
+            setTimeout(() => {
+                // Command Injection Detection
+                let simulatedOutput = "";
+                const hasDelimiter = rawInput.includes(';') || rawInput.includes('&') || rawInput.includes('|') || rawInput.includes('`') || rawInput.includes('$(');
+                
+                // Base ping response
+                simulatedOutput += `PING ${rawInput.split(/[;&|`$]/)[0].trim()} (127.0.0.1) 56(84) bytes of data.\n`;
+                simulatedOutput += `64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.038 ms\n`;
+                simulatedOutput += `64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=0.041 ms\n`;
+                simulatedOutput += `64 bytes from 127.0.0.1: icmp_seq=3 ttl=64 time=0.039 ms\n\n`;
+                simulatedOutput += `--- ping statistics ---\n3 packets transmitted, 3 received, 0% packet loss, time 2045ms\n\n`;
+
+                if (hasDelimiter) {
+                    const lower = rawInput.toLowerCase();
+                    simulatedOutput += `[⚡ OS Command Executed]:\n`;
+
+                    if (lower.includes('id') || lower.includes('whoami')) {
+                        simulatedOutput += `uid=33(www-data) gid=33(www-data) groups=33(www-data)\n`;
+                        notifyParentLab('command_injection_id', { payload: rawInput });
+                    }
+                    if (lower.includes('ls')) {
+                        if (lower.includes('/secret')) {
+                            simulatedOutput += `flag.txt  root_backup.key  database_dump.sql\n`;
+                        } else {
+                            simulatedOutput += `bin  boot  dev  etc  home  lib  opt  proc  root  run  sbin  secret  srv  tmp  usr  var\n`;
+                        }
+                        notifyParentLab('command_injection_ls', { payload: rawInput });
+                    }
+                    if (lower.includes('cat') && lower.includes('passwd')) {
+                        simulatedOutput += `root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nbin:x:2:2:bin:/bin:/usr/sbin/nologin\nwww-data:x:33:33:www-data:/var/www:/usr/sbin/nologin\nsysadmin:x:1000:1000:SysAdmin,,,:/home/sysadmin:/bin/bash\n`;
+                        notifyParentLab('command_injection_passwd', { payload: rawInput });
+                    }
+                    if (lower.includes('cat') && lower.includes('flag')) {
+                        const flag = "FLAG{c0mm4nd_1nj3ct10n_r00t_sh3ll_2026}";
+                        simulatedOutput += `\n🎉 CONGRATULATIONS! FLAG:\n=========================================\n${flag}\n=========================================\n`;
+                        notifyParentLab('command_injection_flag', { flag: flag, payload: rawInput });
+                    }
+                }
+
+                output.textContent = simulatedOutput;
+            }, 300);
+        }
+
+        function notifyParentLab(type, data) {
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'lab_evidence',
+                    labId: 'command-injection-diagnostic',
+                    evidence: {
+                        type: type,
+                        data: data,
+                        timestamp: new Date().toISOString()
+                    }
+                }, '*');
+            }
+        }
+    </script>
+</body>
+</html>
