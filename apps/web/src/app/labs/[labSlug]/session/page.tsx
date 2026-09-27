@@ -8,6 +8,8 @@ import {
   Check, ArrowLeft, ArrowRight, Eye, Code2, Sparkles, HelpCircle, Lock, 
   Unlock, AlertCircle, Compass 
 } from 'lucide-react';
+import { getLabBySlug, LABS_DATA } from '@/lib/labs-data';
+import { getLevelForXp, ACHIEVEMENTS } from '@/lib/gamification';
 
 interface LabObjective {
   id: number;
@@ -51,84 +53,77 @@ export default function LabSessionPage({ params }: { params: Promise<{ labSlug: 
 
   // Determine lab configuration based on slug
   const getLabConfig = () => {
-    if (slug.includes('xss') || slug.includes('forum')) {
+    const labDef = getLabBySlug(slug);
+    if (labDef) {
+      let targetUrl = '/targets/cyberbooks/index.html';
+      let mockAddress = 'http://target-cyberbooks.lab:8080';
+      let availableRoutes = [labDef.entryPoint, '/login', '/search', '/admin'];
+
+      if (labDef.targetApp.toLowerCase().includes('forum')) {
+        targetUrl = '/targets/cyberforum/index.html';
+        mockAddress = 'http://cyberforum.lab:8080';
+        availableRoutes = ['/', '/comments', '/profile', '/search', '/login', '/admin'];
+      } else if (labDef.targetApp.toLowerCase().includes('docs') || labDef.category === 'IDOR') {
+        targetUrl = '/targets/securedocs/index.html';
+        mockAddress = 'https://securedocs.corp/api/v1';
+        availableRoutes = ['/documents', '/profile', '/settings', '/download'];
+      } else if (labDef.targetApp.toLowerCase().includes('diagnostic') || labDef.category === 'COMMAND_INJECTION') {
+        targetUrl = '/targets/diagnosticpanel/index.html';
+        mockAddress = 'http://diagnostics.internal.server';
+        availableRoutes = ['/ping', '/traceroute', '/dns', '/system-status'];
+      } else if (labDef.category === 'LINUX') {
+        targetUrl = '/targets/cyberbooks/index.html';
+        mockAddress = 'ssh kali@cybertrip-linux-range:22';
+        availableRoutes = ['Terminal', '/var/log', '/etc/passwd'];
+      } else {
+        targetUrl = '/targets/cyberbooks/index.html';
+        mockAddress = `http://${labDef.targetApp.toLowerCase()}.lab:8080`;
+        availableRoutes = [labDef.entryPoint, '/search', '/login', '/admin'];
+      }
+
       return {
-        title: 'CyberForum — Cross-Site Scripting (XSS)',
-        category: 'XSS',
-        targetUrl: '/targets/cyberforum/index.html',
-        mockAddress: 'http://cyberforum.lab:8080',
-        availableRoutes: ['/', '/threads', '/search', '/login', '/admin'],
-        xpReward: 250,
-        hints: [
-          { level: 1, title: 'Kontseptual Yo\'llanma', penalty: 10, content: 'Qidiruv maydonida kiritilgan ma\'lumotlar brauzer HTML DOM ga to\'g\'ridan-to\'g\'ri filtrsiz aks ettirilmoqda.', unlocked: false },
-          { level: 2, title: 'Aniq Zaiflik Maydoni', penalty: 25, content: 'URL dagi `?q=` parametri yoki izoh qoldirish maydonida `<script>` va `onerror` teglari filtrlanmagan.', unlocked: false },
-          { level: 3, title: 'Exploit Sintaksisi', penalty: 50, content: 'Izoh maydoniga quyidagi payloadni yozing: <script>alert(document.domain)</script> yoki <img src=x onerror=alert(1)>', unlocked: false },
-        ],
-        objectives: [
-          { id: 1, title: 'Reflected XSS aniqlash', description: 'Qidiruv maydonida foydalanuvchi kiritmasi filtrlanmaganligini aniqlang', completed: false, autoKey: 'reflected_xss' },
-          { id: 2, title: 'Stored XSS joylashtirish', description: 'Forum izohlari qismida o\'zboshimchalik bilan JavaScript kodini kiritib bajaring', completed: false, autoKey: 'xss_alert_triggered' },
-          { id: 3, title: 'Admin sessiya cookie-faylini qo\'lga kiritish', description: 'Administrator boti tashrif buyurganida uning maxfiy tokenini (FLAG) tutib oling', completed: false, autoKey: 'admin_cookie_compromised' },
-        ]
-      };
-    } else if (slug.includes('idor') || slug.includes('docs')) {
-      return {
-        title: 'SecureDocs — IDOR / BOLA Zaifligi',
-        category: 'IDOR',
-        targetUrl: '/targets/securedocs/index.html',
-        mockAddress: 'https://securedocs.corp/api/v1',
-        availableRoutes: ['/documents', '/profile', '/settings', '/download'],
-        xpReward: 300,
-        hints: [
-          { level: 1, title: 'Kontseptual Yo\'llanma', penalty: 10, content: 'Mijoz hujjati ochilganda URL manzilida uzatilayotgan sonli parametrni (ID) tahlil qiling.', unlocked: false },
-          { level: 2, title: 'Aniq Zaiflik Maydoni', penalty: 25, content: 'Backend API foydalanuvchi so\'ragan `id` parametrini joriy sessiyadagi token bilan solishtirmaydi.', unlocked: false },
-          { level: 3, title: 'Exploit Sintaksisi', penalty: 50, content: 'URL manzilidagi ?id=1042 ni ?id=1001 ga almashtirib so\'rov yuboring va direktorning maxfiy faylini oching.', unlocked: false },
-        ],
-        objectives: [
-          { id: 1, title: 'O\'z shaxsiy hujjatingizni tahlil qiling', description: 'URL parametrida mijoz identifikatori (ID: 1042) uzatilayotganini tekshiring', completed: true, autoKey: 'idor_own_doc' },
-          { id: 2, title: 'Boshqa mijoz hujjatiga ruxsatsiz kiring', description: 'ID parametrini o\'zgartirish orqali begona foydalanuvchilar hujjatlarini oching', completed: false, autoKey: 'idor_access' },
-          { id: 3, title: 'Audit hisoboti (FLAG) ni toping', description: 'Boshqaruvchi direktorga tegishli #1001-sonli maxfiy audit hisobotini ochib flagni oling', completed: false, autoKey: 'idor_flag_found' },
-        ]
-      };
-    } else if (slug.includes('command') || slug.includes('diagnostic')) {
-      return {
-        title: 'DiagnosticPanel — OS Command Injection',
-        category: 'COMMAND_INJECTION',
-        targetUrl: '/targets/diagnosticpanel/index.html',
-        mockAddress: 'http://diagnostics.internal.server',
-        availableRoutes: ['/ping', '/traceroute', '/dns', '/system-status'],
-        xpReward: 350,
-        hints: [
-          { level: 1, title: 'Kontseptual Yo\'llanma', penalty: 10, content: 'Server tarmoq diagnostikasi uchun tizim qobig\'ida to\'g\'ridan-to\'g\'ri `ping` buyrug\'ini chaqiradi.', unlocked: false },
-          { level: 2, title: 'Aniq Zaiflik Maydoni', penalty: 25, content: 'IP manzilidan so\'ng bash buyruq ajratgichlari (; & |) tekshirilmasdan uzatilmoqda.', unlocked: false },
-          { level: 3, title: 'Exploit Sintaksisi', penalty: 50, content: 'Quyidagi payloadni kiriting: 127.0.0.1; cat /secret/flag.txt', unlocked: false },
-        ],
-        objectives: [
-          { id: 1, title: 'Buyruq ajratgichini aniqlang', description: 'Kirish maydonida ; | & yordamida `id` yoki `whoami` buyrug\'ini bajaring', completed: false, autoKey: 'command_injection_id' },
-          { id: 2, title: '/etc/passwd faylini o\'qing', description: 'Server tizim foydalanuvchilari ro\'yxatini chiqarib oling', completed: false, autoKey: 'command_injection_passwd' },
-          { id: 3, title: 'Serverdagi flagni qo\'lga kiriting', description: '/secret/flag.txt fayli tarkibini ekranga chiqaring', completed: false, autoKey: 'command_injection_flag' },
-        ]
-      };
-    } else {
-      // Default: CyberBooks SQL Injection
-      return {
-        title: 'CyberBooks — SQL Injection (SQLi)',
-        category: 'SQL_INJECTION',
-        targetUrl: '/targets/cyberbooks/index.html',
-        mockAddress: 'http://target-cyberbooks.lab:8080',
-        availableRoutes: ['/books', '/search', '/login', '/authors', '/admin'],
-        xpReward: 300,
-        hints: [
-          { level: 1, title: 'Kontseptual Yo\'llanma', penalty: 10, content: 'Qidiruv so\'rovi parametri SQL query bilan bevosita birlashtirilgan. Bitta qo\'shtirnoq (\') yozib xatolikni tekshiring.', unlocked: false },
-          { level: 2, title: 'Aniq Zaiflik Maydoni', penalty: 25, content: 'Kitoblarni qidirishda UNION SELECT orqali boshqa jadvallardagi (users) ma\'lumotlarni olish mumkin.', unlocked: false },
-          { level: 3, title: 'Exploit Sintaksisi', penalty: 50, content: 'Login sahifasida parolsiz kirish uchun: admin\' OR 1=1 -- yoki qidiruvda \' UNION SELECT null, username, password FROM users --', unlocked: false },
-        ],
-        objectives: [
-          { id: 1, title: 'SQL sintaksis xatosini keltirib chiqaring', description: 'Qidiruv maydonida bitta qo\'shtirnoq (\') yordamida ma\'lumotlar bazasi xatosini oching', completed: false, autoKey: 'error_triggered' },
-          { id: 2, title: 'UNION Injection orqali bazadagi ma\'lumotlarni oling', description: 'UNION SELECT orqali foydalanuvchilar (users) yoki jadvallar ro\'yxatini chiqaring', completed: false, autoKey: 'union_injection' },
-          { id: 3, title: 'Parolsiz Administrator sifatida kiring', description: 'Login formasida SQL injection (\' OR 1=1 --) orqali tizimga kiring', completed: false, autoKey: 'auth_bypass' },
-        ]
+        title: `${labDef.targetApp} — ${labDef.title}`,
+        category: labDef.category,
+        targetUrl,
+        mockAddress,
+        availableRoutes,
+        xpReward: labDef.xp,
+        hints: labDef.hints.map((h) => ({
+          level: h.level,
+          title: h.title,
+          penalty: h.penalty,
+          content: h.content,
+          unlocked: false,
+        })),
+        objectives: labDef.objectives.map((o) => ({
+          id: o.id,
+          title: o.title,
+          description: o.description,
+          completed: false,
+          autoKey: o.autoKey || `obj_${o.id}`,
+        })),
       };
     }
+
+    // Default fallback
+    return {
+      title: 'CyberBooks — SQL Injection (SQLi)',
+      category: 'SQL_INJECTION',
+      targetUrl: '/targets/cyberbooks/index.html',
+      mockAddress: 'http://target-cyberbooks.lab:8080',
+      availableRoutes: ['/books', '/search', '/login', '/authors', '/admin'],
+      xpReward: 300,
+      hints: [
+        { level: 1, title: 'Kontseptual Yo\'llanma', penalty: 10, content: 'Qidiruv so\'rovi parametri SQL query bilan bevosita birlashtirilgan. Bitta qo\'shtirnoq (\') yozib xatolikni tekshiring.', unlocked: false },
+        { level: 2, title: 'Aniq Zaiflik Maydoni', penalty: 25, content: 'Kitoblarni qidirishda UNION SELECT orqali boshqa jadvallardagi (users) ma\'lumotlarni olish mumkin.', unlocked: false },
+        { level: 3, title: 'Exploit Sintaksisi', penalty: 50, content: 'Login sahifasida parolsiz kirish uchun: admin\' OR 1=1 --', unlocked: false },
+      ],
+      objectives: [
+        { id: 1, title: 'SQL sintaksis xatosini keltirib chiqaring', description: 'Qidiruv maydonida bitta qo\'shtirnoq (\') yordamida ma\'lumotlar bazasi xatosini oching', completed: false, autoKey: 'error_triggered' },
+        { id: 2, title: 'UNION Injection orqali bazadagi ma\'lumotlarni oling', description: 'UNION SELECT orqali foydalanuvchilar (users) yoki jadvallar ro\'yxatini chiqaring', completed: false, autoKey: 'union_injection' },
+        { id: 3, title: 'Parolsiz Administrator sifatida kiring', description: 'Login formasida SQL injection (\' OR 1=1 --) orqali tizimga kiring', completed: false, autoKey: 'auth_bypass' },
+      ],
+    };
   };
 
   const labConfig = getLabConfig();
@@ -714,48 +709,104 @@ export default function LabSessionPage({ params }: { params: Promise<{ labSlug: 
         </div>
       )}
 
-      {/* ── Completion Modal ── */}
-      {showCompletionModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0E141D] border border-emerald-500/40 rounded-2xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl animate-in zoom-in-95">
-            <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40">
-              <Award className="w-8 h-8" />
-            </div>
+      {/* ── Completion Modal (Section 8 Format) ── */}
+      {showCompletionModal && (() => {
+        const totalXp = 2450;
+        const levelData = getLevelForXp(totalXp + currentXpReward);
+        const achievement = ACHIEVEMENTS.find(a => 
+          labConfig.category.includes('SQL') ? a.code === 'sql_hunter' : 
+          labConfig.category.includes('XSS') ? a.code === 'xss_explorer' : 
+          a.code === 'first_lab'
+        ) || ACHIEVEMENTS[2];
 
-            <h2 className="text-xl font-bold text-white">Laboratoriya Muvaffaqiyatli Yakunlandi!</h2>
-            <p className="text-gray-400 text-xs leading-relaxed">
-              Tabriklaymiz! Siz <strong>{labConfig.title}</strong> laboratoriyasini to'liq yakunladingiz.
-            </p>
-
-            <div className="bg-gray-900 border border-gray-800 rounded-xl p-3 flex justify-around text-center">
-              <div>
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Olingan XP</span>
-                <span className="text-base font-bold text-emerald-400">+{currentXpReward} XP</span>
+        return (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="bg-[#0E141D] border border-emerald-500/40 rounded-3xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl animate-in zoom-in-95">
+              
+              <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/40 shadow-lg shadow-emerald-500/10">
+                <CheckCircle2 className="w-8 h-8" />
               </div>
-              <div className="h-8 w-px bg-gray-800"></div>
-              <div>
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Sarflangan vaqt</span>
-                <span className="text-base font-bold text-gray-200">{formatTime(45 * 60 - timeLeft)}</span>
-              </div>
-            </div>
 
-            <div className="pt-2 flex space-x-3">
-              <Link
-                href="/labs"
-                className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-2.5 rounded-xl text-xs transition-colors"
-              >
-                Keyingi laboratoriyaga o'tish →
-              </Link>
-              <button
-                onClick={() => setShowCompletionModal(false)}
-                className="bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold px-4 py-2.5 rounded-xl text-xs transition-colors"
-              >
-                Yopish
-              </button>
+              <div>
+                <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
+                  ✓ Lab Completed
+                </span>
+                <h2 className="text-xl font-black text-white mt-3">{labConfig.title}</h2>
+              </div>
+
+              {/* Lab Stats Card */}
+              <div className="bg-gray-900/80 border border-gray-800 rounded-2xl p-4 grid grid-cols-3 gap-2 text-center font-mono">
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Reward</span>
+                  <span className="text-sm font-black text-emerald-400">+{currentXpReward} XP</span>
+                </div>
+                <div className="border-x border-gray-800 px-2">
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Objectives</span>
+                  <span className="text-sm font-black text-cyan-400">{objectives.length} / {objectives.length}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Time</span>
+                  <span className="text-sm font-black text-gray-200">{formatTime(45 * 60 - timeLeft)}</span>
+                </div>
+              </div>
+
+              {/* Unlocked Achievement */}
+              <div className="bg-gradient-to-r from-amber-500/10 to-purple-500/10 border border-amber-500/30 rounded-2xl p-3 flex items-center space-x-3 text-left">
+                <span className="text-2xl">{achievement.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Achievement:</span>
+                    <span className="text-[10px] font-mono font-bold text-emerald-400">+{achievement.xpReward} XP</span>
+                  </div>
+                  <h4 className="text-xs font-bold text-white truncate">{achievement.title}</h4>
+                </div>
+              </div>
+
+              {/* Dashboard Gamification Progress */}
+              <div className="bg-[#070A0E] border border-gray-800 rounded-2xl p-4 space-y-2 text-left font-mono">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-400 font-sans">TOTAL XP</span>
+                  <span className="text-emerald-400 font-bold">{(totalXp + currentXpReward).toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-gray-400 font-sans">LEVEL</span>
+                  <span className="text-white font-bold">{levelData.currentLevel.level} — {levelData.currentLevel.name}</span>
+                </div>
+
+                <div className="space-y-1 pt-1">
+                  <div className="flex justify-between text-[11px] text-gray-500">
+                    <span>NEXT LEVEL</span>
+                    <span className="text-cyan-400 font-semibold">{levelData.xpRemaining} XP remaining</span>
+                  </div>
+                  <div className="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden border border-gray-800">
+                    <div 
+                      className="bg-gradient-to-r from-cyan-500 to-emerald-500 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${levelData.progressPercent}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <Link
+                  href="/labs"
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-black py-2.5 rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20"
+                >
+                  Keyingi laboratoriyaga o'tish →
+                </Link>
+                <button
+                  onClick={() => setShowCompletionModal(false)}
+                  className="bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold px-4 py-2.5 rounded-xl text-xs transition-colors"
+                >
+                  Yopish
+                </button>
+              </div>
+
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
