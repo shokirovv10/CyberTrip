@@ -1,6 +1,9 @@
 # Multi-stage production Dockerfile for @cybertrip/api (NestJS)
 FROM node:20-alpine AS builder
 
+# Install OpenSSL and libc6-compat for Prisma engine on Alpine
+RUN apk add --no-cache openssl libc6-compat
+
 WORKDIR /app
 
 # Copy root configs & workspace manifests
@@ -15,6 +18,9 @@ RUN npx turbo run build --filter=@cybertrip/api...
 
 # Production image
 FROM node:20-alpine AS runner
+
+# Install OpenSSL and libc6-compat for Prisma runtime on Alpine
+RUN apk add --no-cache openssl libc6-compat
 
 WORKDIR /app
 ENV NODE_ENV=production
