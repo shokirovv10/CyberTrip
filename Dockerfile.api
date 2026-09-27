@@ -10,6 +10,7 @@ COPY apps/api/ ./apps/api/
 
 # Install dependencies and build
 RUN npm ci
+RUN npx prisma generate --schema=./packages/database/prisma/schema.prisma
 RUN npx turbo run build --filter=@cybertrip/api...
 
 # Production image
