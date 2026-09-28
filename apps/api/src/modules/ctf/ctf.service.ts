@@ -50,9 +50,9 @@ export class CtfService {
       });
 
       if (dbChallenges && dbChallenges.length > 0) {
-        return dbChallenges.map(c => ({
+        return (dbChallenges as any[]).map((c: any) => ({
           ...c,
-          solves: c._count.submissions,
+          solves: c._count?.submissions || 0,
           points: c.initialPoints
         }));
       }
@@ -215,7 +215,7 @@ export class CtfService {
       });
 
       if (topSolvers && topSolvers.length > 0) {
-        return topSolvers.map((g, index) => ({
+        return (topSolvers as any[]).map((g: any, index: number) => ({
           rank: index + 1,
           id: g.userId,
           username: g.user.username,

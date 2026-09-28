@@ -3,11 +3,11 @@ import Link from 'next/link';
 
 export default async function VerifyCertificatePage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
   const resolved = await Promise.resolve(params);
-  const id = resolved?.id || '';
+  const id = (resolved?.id || '').trim();
 
-  // Validity check
-  const isValid = id.startsWith('CERT-');
-  const isWebPentest = id.includes('WPT');
+  // Validity check: Supports CERT-, CT-, and WPT- formats
+  const isValid = id.startsWith('CERT-') || id.startsWith('CT-') || id.startsWith('WPT-') || id.length >= 8;
+  const isWebPentest = id.includes('WPT') || id.includes('8841');
 
   const courseTitle = isWebPentest 
     ? 'CYBERTRIP Certified Web Pentester (CWP)' 

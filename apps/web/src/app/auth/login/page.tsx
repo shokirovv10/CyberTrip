@@ -3,16 +3,18 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Shield, Lock, Mail, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import { Shield, Lock, Mail, AlertCircle, Loader2, ArrowRight, Eye, EyeOff, Check } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect') || '/dashboard';
+  const redirectUrl = searchParams.get('redirect') || '/profile';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,10 +26,16 @@ function LoginForm() {
     try {
       const res = await fetchApi<{ user: { id: string; role: string; email: string } }>('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({ email: email.trim(), password, rememberMe }),
       });
 
       if (res && res.user) {
+        if (rememberMe) {
+          localStorage.setItem('cybertrip_remember', 'true');
+        } else {
+          localStorage.removeItem('cybertrip_remember');
+        }
+
         if (res.user.role === 'ADMIN') {
           sessionStorage.setItem('cybertrip_admin_auth', 'true');
           router.push('/admin');
@@ -43,7 +51,7 @@ function LoginForm() {
         sessionStorage.setItem('cybertrip_admin_auth', 'true');
         router.push('/admin');
       } else {
-        setError(err.message || 'Email yoki parol xato kiritildi!');
+        setError(err.message || 'Email yoki parol xato kiritildi! Iltimos, qayta tekshirib ko\'ring.');
       }
     } finally {
       setLoading(false);
@@ -60,12 +68,12 @@ function LoginForm() {
         </div>
         <h1 className="text-2xl font-black text-white">Tizimga Kirish</h1>
         <p className="text-xs text-gray-400">
-          CYBERTRIP platformasidagi hisobingizga kiring
+          CYBERTRIP platformasidagi o'quv kabinetingizga kiring
         </p>
       </div>
 
       {error && (
-        <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center space-x-2 text-xs text-red-400 animate-msg-in">
+        <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl flex items-center space-x-2.5 text-xs text-red-400 animate-msg-in">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
@@ -99,14 +107,35 @@ function LoginForm() {
           <div className="relative">
             <Lock className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               required
               placeholder="••••••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors font-mono"
+              className="w-full pl-10 pr-10 py-2.5 bg-gray-900 border border-gray-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors font-mono"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 p-1"
+              title={showPassword ? 'Parolni yashirish' : 'Parolni ko\'rsatish'}
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
+        </div>
+
+        {/* Remember Me Checkbox */}
+        <div className="flex items-center justify-between pt-1">
+          <label className="flex items-center space-x-2.5 cursor-pointer text-gray-300">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded bg-gray-900 border-gray-700 text-cyan-500 focus:ring-cyan-500/20"
+            />
+            <span className="text-xs">Meni eslab qolish</span>
+          </label>
         </div>
 
         <button
@@ -117,11 +146,11 @@ function LoginForm() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin text-black" />
-              <span>Tekshirilmoqda...</span>
+              <span>Kirish tekshirilmoqda...</span>
             </>
           ) : (
             <>
-              <span>Kirish</span>
+              <span>Tizimga Kirish</span>
               <ArrowRight className="w-4 h-4" />
             </>
           )}

@@ -4,20 +4,26 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  Shield, Menu, X, User, Zap, ChevronDown, LayoutDashboard, 
-  GraduationCap, Building2, Lock, LogOut, Award, Settings, 
-  Terminal, Trophy, Users, BookOpen, CreditCard, Sparkles, Flag
+  Shield, Menu, X, User, ChevronDown, 
+  Terminal, Trophy, Users, BookOpen, Award, 
+  Settings, LogOut, CheckCircle2, Globe, Sparkles
 } from 'lucide-react';
 
 export function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  
+  const moreRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(event.target as Node)) {
+        setMoreDropdownOpen(false);
+      }
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setProfileDropdownOpen(false);
       }
@@ -26,24 +32,30 @@ export function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close menu on route change
+  // Close menus on route change
   useEffect(() => {
     setMobileMenuOpen(false);
+    setMoreDropdownOpen(false);
     setProfileDropdownOpen(false);
   }, [pathname]);
 
-  // Primary Ecosystem Navigation Links
-  const mainNavLinks = [
-    { href: '/', label: 'Bosh Sahifa' },
+  // Clean, focused primary navigation links (per Section 11)
+  const primaryLinks = [
     { href: '/learn', label: "O'rganish" },
-    { href: '/labs', label: 'Laboratoriyalar' },
+    { href: '/labs', label: 'Labs' },
     { href: '/ctf', label: 'CTF' },
     { href: '/tournaments', label: 'Turnirlar' },
-    { href: '/terminal', label: 'Terminal' },
-    { href: '/chat', label: 'Hamjamiyat' },
-    { href: '/ranking', label: 'Reyting' },
-    { href: '/certificates', label: 'Sertifikatlar' },
-    { href: '/pricing', label: 'Narxlar', isPro: true },
+    { href: '/chat', label: 'Community' },
+    { href: '/pricing', label: 'Pricing' },
+  ];
+
+  // Secondary links inside "Ko'proq" dropdown
+  const secondaryLinks = [
+    { href: '/terminal', label: 'Linux Terminal', icon: Terminal },
+    { href: '/ranking', label: 'Reyting va Scoreboard', icon: Trophy },
+    { href: '/certificates', label: 'Sertifikatlar', icon: Award },
+    { href: '/glossary', label: 'Kiber-Lug\'at', icon: BookOpen },
+    { href: '/verify/CT-2026-8841', label: 'Sertifikat Tekshiruvi', icon: CheckCircle2 },
   ];
 
   return (
@@ -65,246 +77,138 @@ export function Navbar() {
           </div>
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <nav className="hidden xl:flex items-center space-x-1">
-          {mainNavLinks.map((item) => {
-            const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+        {/* Desktop Primary Navigation */}
+        <nav className="hidden lg:flex items-center space-x-1">
+          {primaryLinks.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 ${
+                className={`px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
                   isActive
                     ? 'text-cyan-400 bg-cyan-500/10 font-bold'
                     : 'text-gray-300 hover:text-white hover:bg-gray-900/60'
                 }`}
               >
-                <span>{item.label}</span>
-                {item.isPro && (
-                  <span className="text-[9px] font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-orange-500 text-black px-1.5 py-0.2 rounded font-mono shadow-sm">
-                    PRO
-                  </span>
-                )}
+                {item.label}
               </Link>
             );
           })}
-        </nav>
 
-        {/* Medium Screen Responsive Nav (Compact 6 primary items) */}
-        <nav className="hidden lg:flex xl:hidden items-center space-x-1">
-          {mainNavLinks.slice(0, 7).map((item) => {
-            const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`px-2 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                  isActive
-                    ? 'text-cyan-400 bg-cyan-500/10 font-bold'
-                    : 'text-gray-300 hover:text-white hover:bg-gray-900/60'
-                }`}
-              >
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Right Section: Profil & Mobile Menu Toggle */}
-        <div className="flex items-center space-x-3">
-          
-          {/* Profil Button & Dropdown */}
-          <div className="relative" ref={profileRef}>
+          {/* Secondary "Ko'proq" Dropdown */}
+          <div className="relative" ref={moreRef}>
             <button
-              onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                pathname.startsWith('/dashboard') || profileDropdownOpen
-                  ? 'bg-cyan-500/15 border-cyan-500/40 text-cyan-300 shadow-md shadow-cyan-500/10'
-                  : 'bg-gray-900/90 border-gray-800 text-gray-200 hover:border-gray-700'
-              }`}
+              onClick={() => setMoreDropdownOpen(!moreDropdownOpen)}
+              className="px-3 py-2 rounded-xl text-sm font-semibold text-gray-400 hover:text-white hover:bg-gray-900/60 transition-all flex items-center space-x-1"
             >
-              <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center text-black font-extrabold text-[10px]">
-                <User className="w-3 h-3 text-black" />
-              </div>
-              <span>Profil</span>
-              <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} />
+              <span>Ko'proq</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${moreDropdownOpen ? 'rotate-180 text-cyan-400' : ''}`} />
             </button>
 
-            {/* Profile Dropdown Menu */}
-            {profileDropdownOpen && (
-              <div className="absolute top-full right-0 mt-2 w-64 rounded-2xl bg-[#0B0F17] border border-gray-800 p-2 shadow-2xl space-y-1 animate-in fade-in-50 zoom-in-95 z-50">
-                <div className="px-3 py-2 border-b border-gray-800/80 mb-1">
-                  <span className="text-xs font-bold text-white block">Talaba Kabineti</span>
-                  <span className="text-[10px] text-gray-500 block font-mono">student@cybertrip.uz</span>
-                </div>
-
-                <Link
-                  href="/dashboard"
-                  className="flex items-center space-x-2.5 p-2 rounded-xl text-xs font-semibold text-gray-200 hover:bg-gray-900 hover:text-cyan-400 transition-colors"
-                >
-                  <LayoutDashboard className="w-4 h-4 text-cyan-400" />
-                  <span>Dashboard (Boshqaruv)</span>
-                </Link>
-
-                <Link
-                  href="/dashboard/learning"
-                  className="flex items-center space-x-2.5 p-2 rounded-xl text-xs font-semibold text-gray-200 hover:bg-gray-900 hover:text-cyan-400 transition-colors"
-                >
-                  <BookOpen className="w-4 h-4 text-blue-400" />
-                  <span>Mening Dasturlarim</span>
-                </Link>
-
-                <Link
-                  href="/dashboard/labs"
-                  className="flex items-center space-x-2.5 p-2 rounded-xl text-xs font-semibold text-gray-200 hover:bg-gray-900 hover:text-cyan-400 transition-colors"
-                >
-                  <Terminal className="w-4 h-4 text-emerald-400" />
-                  <span>Mening Laboratoriyalarim</span>
-                </Link>
-
-                <Link
-                  href="/ctf/scoreboard"
-                  className="flex items-center space-x-2.5 p-2 rounded-xl text-xs font-semibold text-gray-200 hover:bg-gray-900 hover:text-purple-400 transition-colors"
-                >
-                  <Flag className="w-4 h-4 text-purple-400" />
-                  <span>Mening CTF Progressim</span>
-                </Link>
-
-                <Link
-                  href="/my-tournaments"
-                  className="flex items-center space-x-2.5 p-2 rounded-xl text-xs font-semibold text-gray-200 hover:bg-gray-900 hover:text-yellow-400 transition-colors"
-                >
-                  <Trophy className="w-4 h-4 text-yellow-400" />
-                  <span>Mening Turnirlarim</span>
-                </Link>
-
-                <Link
-                  href="/teams"
-                  className="flex items-center space-x-2.5 p-2 rounded-xl text-xs font-semibold text-gray-200 hover:bg-gray-900 hover:text-cyan-400 transition-colors"
-                >
-                  <Users className="w-4 h-4 text-cyan-400" />
-                  <span>Jamoa (Team)</span>
-                </Link>
-
-                <Link
-                  href="/dashboard/achievements"
-                  className="flex items-center space-x-2.5 p-2 rounded-xl text-xs font-semibold text-gray-200 hover:bg-gray-900 hover:text-amber-400 transition-colors"
-                >
-                  <Award className="w-4 h-4 text-amber-400" />
-                  <span>Yutuqlar (Achievements)</span>
-                </Link>
-
-                <Link
-                  href="/account/subscription"
-                  className="flex items-center space-x-2.5 p-2 rounded-xl text-xs font-semibold text-gray-200 hover:bg-gray-900 hover:text-emerald-400 transition-colors"
-                >
-                  <CreditCard className="w-4 h-4 text-emerald-400" />
-                  <span>Obuna (Subscription)</span>
-                </Link>
-
-                <Link
-                  href="/dashboard/settings"
-                  className="flex items-center space-x-2.5 p-2 rounded-xl text-xs font-semibold text-gray-200 hover:bg-gray-900 hover:text-cyan-400 transition-colors"
-                >
-                  <Settings className="w-4 h-4 text-gray-400" />
-                  <span>Sozlamalar</span>
-                </Link>
-
-                <div className="border-t border-gray-800/80 my-1" />
-
-                <Link
-                  href="/instructor"
-                  className="flex items-center space-x-2.5 p-2 rounded-xl text-xs font-semibold text-gray-200 hover:bg-gray-900 hover:text-purple-400 transition-colors"
-                >
-                  <GraduationCap className="w-4 h-4 text-purple-400" />
-                  <span>Ustoz Paneli</span>
-                </Link>
-
-                <Link
-                  href="/company"
-                  className="flex items-center space-x-2.5 p-2 rounded-xl text-xs font-semibold text-gray-200 hover:bg-gray-900 hover:text-emerald-400 transition-colors"
-                >
-                  <Building2 className="w-4 h-4 text-emerald-400" />
-                  <span>Kompaniya Paneli</span>
-                </Link>
-
-                <Link
-                  href="/admin"
-                  className="flex items-center space-x-2.5 p-2 rounded-xl text-xs font-semibold text-red-400 hover:bg-gray-900 transition-colors"
-                >
-                  <Lock className="w-4 h-4 text-red-400" />
-                  <span>Admin Paneli</span>
-                </Link>
-
-                <div className="border-t border-gray-800/80 my-1" />
-
-                <Link
-                  href="/auth/login"
-                  className="flex items-center space-x-2.5 p-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-red-400 hover:bg-gray-900 transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Chiqish</span>
-                </Link>
+            {moreDropdownOpen && (
+              <div className="absolute top-full left-0 mt-2 w-56 bg-[#0B0F17] border border-gray-800 rounded-2xl p-2 shadow-2xl space-y-1 animate-dropdown-fade z-50">
+                {secondaryLinks.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:text-white hover:bg-gray-900 transition-colors"
+                    >
+                      <Icon className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </div>
+        </nav>
 
-          {/* Mobile Menu Toggle Button */}
+        {/* Right Auth / Profile Controls */}
+        <div className="hidden lg:flex items-center space-x-3">
+          <Link
+            href="/profile"
+            className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-gray-900 hover:bg-gray-850 border border-gray-800 text-xs font-bold text-gray-200 hover:text-white transition-colors"
+          >
+            <User className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Profil</span>
+          </Link>
+
+          <Link href="/auth/login">
+            <button className="px-4 py-2 text-xs font-bold text-gray-300 hover:text-white transition-colors">
+              Kirish
+            </button>
+          </Link>
+
+          <Link href="/auth/register">
+            <button className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black text-xs font-black rounded-xl shadow-lg shadow-cyan-500/20 transition-all">
+              Ro'yxatdan o'tish
+            </button>
+          </Link>
+        </div>
+
+        {/* Mobile Hamburger Toggle */}
+        <div className="lg:hidden flex items-center space-x-2">
+          <Link
+            href="/profile"
+            className="p-2 text-gray-400 hover:text-white bg-gray-900 border border-gray-800 rounded-xl"
+          >
+            <User className="w-4 h-4 text-cyan-400" />
+          </Link>
+
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-xl bg-gray-900 border border-gray-800 text-gray-300 hover:text-white"
+            className="p-2 text-gray-400 hover:text-white bg-gray-900 border border-gray-800 rounded-xl transition-colors"
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <X className="w-5 h-5 text-cyan-400" /> : <Menu className="w-5 h-5" />}
           </button>
-
         </div>
 
       </div>
 
-      {/* Mobile Drawer Navigation */}
+      {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#0B0F17] border-b border-gray-800 px-4 py-4 space-y-1 animate-in slide-in-from-top-2 max-h-[80vh] overflow-y-auto">
-          {mainNavLinks.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`block px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-between ${
-                pathname === item.href
-                  ? 'bg-cyan-500/10 text-cyan-400'
-                  : 'text-gray-300 hover:bg-gray-900'
-              }`}
-            >
-              <span>{item.label}</span>
-              {item.isPro && (
-                <span className="text-[9px] font-black uppercase bg-gradient-to-r from-amber-400 to-orange-500 text-black px-1.5 py-0.2 rounded font-mono">
-                  PRO
-                </span>
-              )}
-            </Link>
-          ))}
+        <div className="lg:hidden bg-[#070A0E] border-b border-gray-800 px-4 py-6 space-y-4">
+          <div className="space-y-1">
+            {primaryLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="block px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-200 hover:bg-gray-900"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
 
-          <div className="pt-3 border-t border-gray-800 space-y-1">
-            <span className="text-[10px] uppercase font-bold text-gray-500 px-3 block">Kabinet Havolalari</span>
-            <Link
-              href="/dashboard"
-              className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-cyan-400 bg-gray-900/60"
-            >
-              <span>Boshqaruv Paneli</span>
-              <User className="w-4 h-4" />
+          <div className="pt-3 border-t border-gray-800/80 space-y-1">
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider px-3 block">
+              Boshqa Bo'limlar
+            </span>
+            {secondaryLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-300 hover:bg-gray-900 rounded-xl"
+              >
+                <item.icon className="w-4 h-4 text-cyan-400" />
+                <span>{item.label}</span>
+              </Link>
+            ))}
+          </div>
+
+          <div className="pt-4 border-t border-gray-800/80 flex items-center space-x-3">
+            <Link href="/auth/login" className="flex-1">
+              <button className="w-full py-2.5 bg-gray-900 border border-gray-800 text-xs font-bold text-gray-200 rounded-xl">
+                Kirish
+              </button>
             </Link>
-            <Link
-              href="/teams"
-              className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:bg-gray-900"
-            >
-              <span>Jamoa (Team)</span>
-              <Users className="w-4 h-4" />
-            </Link>
-            <Link
-              href="/my-tournaments"
-              className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:bg-gray-900"
-            >
-              <span>Mening Turnirlarim</span>
-              <Trophy className="w-4 h-4" />
+            <Link href="/auth/register" className="flex-1">
+              <button className="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-emerald-500 text-black text-xs font-black rounded-xl">
+                Ro'yxatdan o'tish
+              </button>
             </Link>
           </div>
         </div>
